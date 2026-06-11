@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Groups UI</title>
+</head>
+<body>
+
+<h1>Groups — V0.0</h1>
+
+Group:
+<select id="group">
+    <option>Neighborhood</option>
+    <option>Local Government</option>
+    <option>Events</option>
+</select>
+
+<button onclick="openGroup()">Open</button>
+
+<br><br>
+
+New group:
+<input id="new-group" type="text" placeholder="Group name" />
+<button onclick="createGroup()">Create</button>
+
+<br><br>
+
+User:
+<input id="user" type="text" placeholder="User name" />
+<button onclick="addUser()">Add User</button>
+<button onclick="removeUser()">Remove User</button>
+
+<br><br>
+
+Message:
+<input id="message" type="text" placeholder="Type message" />
+<button onclick="sendMessage()">Send</button>
+
+<script>
+function openGroup() {
+    alert("Debug>Open group: " + document.getElementById("group").value);
+}
+
+function createGroup() {
+    alert("Debug>Create group: " + document.getElementById("new-group").value);
+}
+
+function addUser() {
+    alert("Debug>Add user: " + document.getElementById("user").value);
+}
+
+function removeUser() {
+    alert("Debug>Remove user: " + document.getElementById("user").value);
+}
+
+function sendMessage() {
+    alert("Debug>Message: " + document.getElementById("message").value);
+}
+</script>
+
+</body>
+</html>
