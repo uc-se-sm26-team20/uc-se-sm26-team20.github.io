@@ -18,12 +18,20 @@ const sendButtonElement = document.getElementById("send-button");
 const chatMessageInput = document.getElementById("chat-message");
 const responsesElement = document.getElementById("responses");
 const statusElement = document.getElementById("status");
+const loginScreen = document.getElementById("login-screen");
+const mainChat = document.getElementById("main-chat");
+const joinButton = document.getElementById("join-button");
+const usernameInput = document.getElementById("username");
 
 if (
   !sendButtonElement ||
   !chatMessageInput ||
   !responsesElement ||
-  !statusElement
+  !statusElement ||
+  !loginScreen ||
+  !mainChat ||
+  !joinButton ||
+  !usernameInput
 ) {
   throw new Error("One or more required messenger UI elements are missing.");
 }
@@ -48,6 +56,16 @@ socket.on("connect_error", (error) => {
 // User input events
 // =============================================================================
 
+joinButton.addEventListener("click", joinChat);
+
+// Allow joining by pressing Enter in the username field.
+usernameInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    joinChat();
+  }
+});
+
 // AC-01.1: clicking the Send button submits the current message.
 sendButtonElement.addEventListener("click", sendMessage);
 
@@ -58,6 +76,32 @@ chatMessageInput.addEventListener("keydown", (event) => {
     sendMessage();
   }
 });
+
+// =============================================================================
+// Use-Case: Join Chat
+// =============================================================================
+
+function joinChat() {
+  const username = usernameInput.value.trim();
+
+  // Basic validation for the username.
+  if (!username) {
+    alert("Please enter a username to join the chat.");
+    return;
+  }
+
+  console.log(`Debug> User joining as: ${username}`);
+
+  // Switch views by toggling the "hidden" class defined in CSS.
+  loginScreen.classList.add("hidden");
+  mainChat.classList.remove("hidden");
+
+  // Inform the server about the new user.
+  socket.emit("join", username);
+
+  // Set focus to the message input for immediate typing.
+  chatMessageInput.focus();
+}
 
 // =============================================================================
 // Use-Case-01: Send Message
