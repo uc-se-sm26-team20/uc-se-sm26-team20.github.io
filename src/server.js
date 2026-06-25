@@ -135,6 +135,13 @@ io.on("connection", (socket) => {
       userlist.get(socket.id) || "Unknown user";
 
     userlist.delete(socket.id);
+    typingUsers.delete(disconnectedUsername);
+
+    io.emit(
+      "typingUsers",
+      Array.from(typingUsers)
+    );//Removes disconencted users from typing list
+
 
     console.log(
       "Client disconnected - socket ID: " +
