@@ -65,11 +65,26 @@ io.on("connection", (socket) => {
   userlist.set(socket.id, username);
 
   console.log(
-    "New client connected - socket ID: " +
-      socket.id +
-      ", username: " +
-      username
+  "New client connected - socket ID: " +
+    socket.id +
+    ", username: " +
+    username
   );
+
+  socket.on("typing", () => {
+      const username = userlist.get(socket.id) || "Unknown user";
+      typingUsers.add(username); //Pulls users username
+
+      io.emit("typingUsers", Array.from(typingUsers)); //Emits text in Tying Indicator box
+    }); //Turns on typing indicator
+
+  socket.on("stopTyping", () => {
+    const username = userlist.get(socket.id) || "Unknown user";
+    typingUsers.delete(username); //Pulls users username
+
+    io.emit("typingUsers", Array.from(typingUsers)); //Removes user from list
+
+    });
 
   // AC-02.3: notify all connected users that someone joined.
   io.emit(
@@ -108,21 +123,6 @@ io.on("connection", (socket) => {
       "message",
       sender + " says: " + message
     );
-
-    socket.on("typing", () => {
-      const username = userlist.get(socket.id) || "Unknown user";
-      typingUsers.add(username); //Pulls users username
-
-      io.emit("typing users", Array.from(typingUsers)); //Emits text in Tying Indicator box
-    }); //Turns on typing indicator
-
-    socket.on("stop typing", () => {
-      const username = userlist.get(socket.id) || "Unknown user";
-      typingUsers.delete(username); //Pulls users username
-
-      io.emit("typing users", Array.from(typingUsers)); //Removes user from list
-
-    });
 
   });
 

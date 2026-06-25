@@ -20,7 +20,6 @@ const responsesElement = document.getElementById("responses");
 const statusElement = document.getElementById("status");
 
 const typingIndicator = document.getElementById("typing-indicator");
-
 let typingTimer;
 let isTyping = false;//Typing indicator defined
 
@@ -164,3 +163,15 @@ function displayStatus(data) {
   // AC-02.4: keep the newest status event visible.
   statusElement.scrollTop = statusElement.scrollHeight;
 }
+
+socket.on("typingUsers", (users) => {
+  if (users.length === 0) {
+    typingIndicator.textContent = "";
+  }
+  else if (users.length === 1) {
+    typingIndicator.textContent = users[0] + " is typing...";
+  }
+  else {
+    typingIndicator.textContent = users.join(", ") + " are typing...";
+  }
+});
