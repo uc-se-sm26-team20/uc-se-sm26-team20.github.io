@@ -50,7 +50,7 @@ function displayMessage(data){
     var d = document.createElement('div');
     //AC-02.2
     var timestamp = new Date().toLocaleTimeString();
-    d.innerHTML = ' [' + timestamp + '] ' + data; 
+    d.innerHTML = ' [' + timestamp + '] ' + DOMPurify.sanitize(data); 
     document.getElementById('responses').appendChild(d);
 }
 
@@ -58,7 +58,8 @@ socket.on('status', function(data) {
     var statusElm = document.getElementById('status');
     //AC-02.2  
     var timestamp = new Date().toLocaleTimeString();
-    statusElm.innerHTML = statusElm.innerHTML + '<br>[' + timestamp + '] ' + data;
+    statusElm.innerHTML = statusElm.innerHTML + '<br>[' + timestamp + '] ' + DOMPurify.sanitize(data);
+    //;
     
     //AC-02.3
     statusElm.scrollTop = statusElm.scrollHeight;
