@@ -18,12 +18,21 @@ const sendButtonElement = document.getElementById("send-button");
 const chatMessageInput = document.getElementById("chat-message");
 const responsesElement = document.getElementById("responses");
 const statusElement = document.getElementById("status");
+const privateResponsesElement = document.getElementById("private-responses");
+const privateChatInput = document.getElementById("private-chat-message");
+const privateSendButton = document.getElementById("private-send-button");
+const privateUserSelect = document.getElementById("private-user-select");
 
 if (
   !sendButtonElement ||
   !chatMessageInput ||
   !responsesElement ||
-  !statusElement
+  !statusElement ||
+  !privateResponsesElement ||
+  !privateChatInput ||
+  !privateSendButton ||
+  !privateUserSelect 
+
 ) {
   throw new Error("One or more required messenger UI elements are missing.");
 }
@@ -56,6 +65,19 @@ chatMessageInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     event.preventDefault();
     sendMessage();
+  }
+});
+
+// =============================================================================
+// Private chat input events
+// =============================================================================
+
+privateSendButton.addEventListener("click", sendPrivateMessage);
+
+privateChatInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    sendPrivateMessage();
   }
 });
 
@@ -138,4 +160,24 @@ function displayStatus(data) {
 
   // AC-02.4: keep the newest status event visible.
   statusElement.scrollTop = statusElement.scrollHeight;
+}
+// =============================================================================
+// Use-Case-03: Private Messages
+// =============================================================================
+
+function sendPrivateMessage() {
+  const recipientSocketId = privateUserSelect.value;
+  const message = privateChatInput.value.trim();
+
+  if (!recipientSocketId || !message) {
+    return;
+  }
+
+  socket.emit("private-message", {
+    recipientSocketId,
+    message
+  });
+
+  privateChatInput.value = "";
+  privateChatInput.focus();
 }

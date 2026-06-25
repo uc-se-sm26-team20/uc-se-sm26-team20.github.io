@@ -16,7 +16,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 8092;
 
 // In-memory collection that maps each Socket.IO ID to a username.
 const userlist = new Map();
