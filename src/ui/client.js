@@ -1,7 +1,6 @@
 /* =============================================================================
- * EECE/CS 3093C Software Engineering — Lab 1
  * client.js — code skeleton provided by Dr. Phu Phung
- * Code complete implementation by [Your Name]
+ * Code complete implementation by Team 20
  * ===============================================================================
  */
 var socket = io(); //connect to the Socket.io Server
@@ -39,6 +38,8 @@ function sendMessage() {
     if (!message) return;   // AC-02.2: empty messages are ignored
     console.log(`Debug>Chat message: ${message}`); //for UI testing only
     // other AC will be implemented
+    socket.emit('message', message);
+
     chatMessageInput.value = ''; // AC-01.5: clear input after sending
     chatMessageInput.focus();
 }

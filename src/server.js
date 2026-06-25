@@ -1,7 +1,8 @@
+
 // =============================================================================
-// EECE/CS 3093C Software Engineering — Lab 1
+// EECE/CS 3093C Software Engineering
 // server.js — code skeleton provided by Phu Phung
-// complete implementation by [Your Name]
+// complete implementation by Team 20
 // =============================================================================
 const express    = require('express');
 const http       = require('http');
@@ -12,7 +13,7 @@ const server = http.createServer(app);
 const io     = new Server(server);
 app.use(express.static(path.join(__dirname, 'ui')));
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 8081;
 server.listen(PORT, () => console.log('Server running on port ' + PORT));
 
 // In-memory store: socketId → username
@@ -37,7 +38,12 @@ io.on('connection', (socket) => {
   // AC-01.4: the broadcast payload includes the sender's username and the text
   // AC-01.5: input is cleared after sending (enforced client-side)
   // ---------------------------------------------------------------------------
-  //Todo: code to implement the above use case and AC items
+  socket.on('message', (data) => {
+      if (!data || data.trim() === "") return; //AC-01.2
+      const sender = userlist.get(socket.id);
+      console.log(`Debug> "${sender} sent: ${data}"`);
+      io.emit('message', sender + 'says: ' + data.trim()) //AC-01.3 and AC-01.4
+  });
 
   // ---------------------------------------------------------------------------
   // Use-Case-02: Receive message — disconnect notification
