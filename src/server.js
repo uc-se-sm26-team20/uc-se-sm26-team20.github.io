@@ -27,6 +27,7 @@ io.on('connection', (socket) => {
   console.log('New client connected - socket ID: ' + socket.id )
 
   //Todo: UC-02 (AC-02.1): notify all connected clients that a new user joined
+  io.emit('status', username + ' joined the chat. Number of connected clients: ' + userlist.size);
 
   // ---------------------------------------------------------------------------
   // Use-Case-01: Send message
@@ -43,17 +44,16 @@ io.on('connection', (socket) => {
       const sender = userlist.get(socket.id);
       console.log(`Debug> "${sender} sent: ${data}"`);
       io.emit('message', sender + 'says: ' + data.trim()) //AC-01.3 and AC-01.4
+      
   });
 
   // ---------------------------------------------------------------------------
   // Use-Case-02: Receive message — disconnect notification
-  //
-  // AC-02.2: all connected clients are notified when a user leaves
   // ---------------------------------------------------------------------------
   socket.on('disconnect', () => {
     const username = userlist.get(socket.id);
     userlist.delete(socket.id);
     console.log('Client disconnected - socket ID: ' + socket.id);
-    //todo: code to broadcast the status
+    io.emit('status', username + ' left the chat. Number of connected clients: ' + userlist.size);
   });
 });
