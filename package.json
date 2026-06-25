@@ -1,0 +1,24 @@
+{
+  "name": "uc-se-sm26-team20.github.io",
+  "version": "1.0.0",
+  "description": "Software Engineering Messenger App",
+  "homepage": "https://github.com/uc-se-sm26-team20/uc-se-sm26-team20.github.io#readme",
+  "bugs": {
+    "url": "https://github.com/uc-se-sm26-team20/uc-se-sm26-team20.github.io/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/uc-se-sm26-team20/uc-se-sm26-team20.github.io.git"
+  },
+  "license": "ISC",
+  "author": "Team 20",
+  "type": "commonjs",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3"
+  }
+}
