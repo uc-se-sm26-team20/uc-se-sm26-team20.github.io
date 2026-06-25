@@ -71,6 +71,13 @@
       color: #168216;
       font-weight: bold;
     }
+
+    .typing-indicator {
+    height: 20px;
+    margin-bottom: 15px;
+    font-style: italic;
+    color: #666;
+    }
   </style>
 </head>
 
@@ -114,6 +121,9 @@
     class="message-area"
     aria-live="polite"
   ></div>
+
+  <!-- Typing indicator. -->
+  <div id="typing-indicator"></div>
 
   <!-- Socket.IO client library supplied by the Node.js server. -->
   <script src="/socket.io/socket.io.js"></script>
