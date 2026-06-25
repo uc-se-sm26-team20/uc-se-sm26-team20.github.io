@@ -47,6 +47,22 @@
       cursor: pointer;
     }
 
+    .login-container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      max-width: 400px;
+      margin: 100px auto;
+      padding: 30px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
     .message-area {
       width: 100%;
       height: 130px;
@@ -81,39 +97,54 @@
     EECE/CS 3093C Software Engineering — Summer 2026
   </p>
 
-  <div class="message-controls">
+  <div id="login-screen" class="login-container">
+    <label for="username">Enter your username to join:</label>
     <input
-      id="chat-message"
+      id="username"
       type="text"
-      maxlength="500"
-      autocomplete="off"
-      placeholder="Type a message..."
-      aria-label="Chat message"
+      placeholder="Username..."
+      style="padding: 10px; font-size: 16px;"
     >
-
-    <button
-      id="send-button"
-      type="button"
-    >
-      Send
+    <button id="join-button" style="padding: 10px; font-size: 16px; cursor: pointer;">
+      Join Chat
     </button>
   </div>
 
-  <h2>System Status</h2>
+  <div id="main-chat" class="hidden">
+    <div class="message-controls">
+      <input
+        id="chat-message"
+        type="text"
+        maxlength="500"
+        autocomplete="off"
+        placeholder="Type a message..."
+        aria-label="Chat message"
+      >
 
-  <div
-    id="status"
-    class="message-area"
-    aria-live="polite"
-  ></div>
+      <button
+        id="send-button"
+        type="button"
+      >
+        Send
+      </button>
+    </div>
 
-  <h2>Chat Responses</h2>
+    <h2>System Status</h2>
 
-  <div
-    id="responses"
-    class="message-area"
-    aria-live="polite"
-  ></div>
+    <div
+      id="status"
+      class="message-area"
+      aria-live="polite"
+    ></div>
+
+    <h2>Chat Responses</h2>
+
+    <div
+      id="responses"
+      class="message-area"
+      aria-live="polite"
+    ></div>
+  </div>
 
   <!-- Socket.IO client library supplied by the Node.js server. -->
   <script src="/socket.io/socket.io.js"></script>

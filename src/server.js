@@ -52,31 +52,24 @@ app.use(express.static(path.join(__dirname, "ui")));
 // =============================================================================
 
 io.on("connection", (socket) => {
-  // Create a readable username from the client's unique socket ID.
-  const socketIdentifier = socket.id
-    .replace(/[^a-zA-Z0-9]/g, "")
-    .slice(-5)
-    .toUpperCase();
+  console.log("New connection established - socket ID: " + socket.id);
 
-  const username =
-    "User_" + (socketIdentifier || "00000");
+  // AC-02.3: notify all connected users that someone joined after they provide a name.
+  socket.on("join", (chosenUsername) => {
+    if (typeof chosenUsername !== "string" || !chosenUsername.trim()) {
+      return;
+    }
 
-  userlist.set(socket.id, username);
+    const name = chosenUsername.trim();
+    userlist.set(socket.id, name);
 
-  console.log(
-    "New client connected - socket ID: " +
-      socket.id +
-      ", username: " +
-      username
-  );
+    console.log("Debug> User " + socket.id + " joined as: " + name);
 
-  // AC-02.3: notify all connected users that someone joined.
-  io.emit(
-    "status",
-    username +
-      " joined the chat. Number of connected clients: " +
-      userlist.size
-  );
+    io.emit(
+      "status",
+      name + " joined the chat. Active users: " + userlist.size
+    );
+  });
 
   // ===========================================================================
   // Use-Case-01: Send Message
@@ -114,25 +107,26 @@ io.on("connection", (socket) => {
   // ===========================================================================
 
   socket.on("disconnect", () => {
-    const disconnectedUsername =
-      userlist.get(socket.id) || "Unknown user";
+    const username = userlist.get(socket.id);
 
-    userlist.delete(socket.id);
+    if (username) {
+      userlist.delete(socket.id);
 
-    console.log(
-      "Client disconnected - socket ID: " +
-        socket.id +
-        ", username: " +
-        disconnectedUsername
-    );
+      console.log(
+        "Client disconnected - socket ID: " +
+          socket.id +
+          ", username: " +
+          username
+      );
 
-    // Notify remaining clients that the user left.
-    io.emit(
-      "status",
-      disconnectedUsername +
-        " left the chat. Number of connected clients: " +
-        userlist.size
-    );
+      // Notify remaining clients that the user left.
+      io.emit(
+        "status",
+        username +
+          " left the chat. Active users: " +
+          userlist.size
+      );
+    }
   });
 });
 
