@@ -19,6 +19,11 @@ const chatMessageInput = document.getElementById("chat-message");
 const responsesElement = document.getElementById("responses");
 const statusElement = document.getElementById("status");
 
+const typingIndicator = document.getElementById("typing-indicator");
+
+let typingTimer;
+let isTyping = false;//Typing indicator defined
+
 if (
   !sendButtonElement ||
   !chatMessageInput ||
@@ -59,6 +64,23 @@ chatMessageInput.addEventListener("keydown", (event) => {
   }
 });
 
+chatMessageInput.addEventListener(
+  "input",
+  () => {
+    if (!isTyping) {
+      isTyping = true;
+      socket.emit("typing");
+    }
+
+    clearTimeout(typingTimer);
+
+    typingTimer = setTimeout(() => {
+      isTyping = false;
+      socket.emit("stopTyping");
+    }, 1000);
+  }
+);//Event listener for if a user is typing
+
 // =============================================================================
 // Use-Case-01: Send Message
 // =============================================================================
@@ -79,6 +101,9 @@ function sendMessage() {
   // AC-01.5: clear and refocus the input after sending.
   chatMessageInput.value = "";
   chatMessageInput.focus();
+
+  socket.emit("stopTyping");
+  isTyping = false;
 }
 
 // =============================================================================
