@@ -21,6 +21,7 @@ const PORT = process.env.PORT || 8080;
 // In-memory collection that maps each Socket.IO ID to a username.
 const userlist = new Map();
 
+const typingUsers = new Set();
 // =============================================================================
 // Lecture 11: Content Security Policy
 // =============================================================================
@@ -107,6 +108,22 @@ io.on("connection", (socket) => {
       "message",
       sender + " says: " + message
     );
+
+    socket.on("typing", () => {
+      const username = userlist.get(socket.id) || "Unknown user";
+      typingUsers.add(username); //Pulls users username
+
+      io.emit("typing users", Array.from(typingUsers)); //Emits text in Tying Indicator box
+    }); //Turns on typing indicator
+
+    socket.on("stop typing", () => {
+      const username = userlist.get(socket.id) || "Unknown user";
+      typingUsers.delete(username); //Pulls users username
+
+      io.emit("typing users", Array.from(typingUsers)); //Removes user from list
+
+    });
+
   });
 
   // ===========================================================================
