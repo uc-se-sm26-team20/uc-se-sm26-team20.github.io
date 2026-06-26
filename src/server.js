@@ -22,6 +22,7 @@ const PORT = process.env.PORT || 8080;
 const userlist = new Map();
 
 const typingUsers = new Set();
+
 // =============================================================================
 // Lecture 11: Content Security Policy
 // =============================================================================
@@ -53,46 +54,48 @@ app.use(express.static(path.join(__dirname, "ui")));
 // =============================================================================
 
 io.on("connection", (socket) => {
-  // Create a readable username from the client's unique socket ID.
-  const socketIdentifier = socket.id
-    .replace(/[^a-zA-Z0-9]/g, "")
-    .slice(-5)
-    .toUpperCase();
+  console.log("New connection established - socket ID: " + socket.id);
 
-  const username =
-    "User_" + (socketIdentifier || "00000");
+  // AC-02.3: notify all connected users that someone joined after they provide a name.
+  socket.on("join", (chosenUsername) => {
+    if (typeof chosenUsername !== "string" || !chosenUsername.trim()) {
+      return;
+    }
 
-  userlist.set(socket.id, username);
+    const name = chosenUsername.trim();
+    userlist.set(socket.id, name);
 
-  console.log(
-  "New client connected - socket ID: " +
-    socket.id +
-    ", username: " +
-    username
-  );
+    console.log(
+      "New client connected - socket ID: " +
+        socket.id +
+        ", username: " +
+        name
+    );
+
+    io.emit(
+      "connected-users",
+      Array.from(userlist.values())
+    );
+
+    io.emit(
+      "status",
+      name + " joined the chat. Active users: " + userlist.size
+    );
+  });
 
   socket.on("typing", () => {
-      const username = userlist.get(socket.id) || "Unknown user";
-      typingUsers.add(username); //Pulls users username
+    const username = userlist.get(socket.id) || "Unknown user";
+    typingUsers.add(username);
 
-      io.emit("typingUsers", Array.from(typingUsers)); //Emits text in Tying Indicator box
-    }); //Turns on typing indicator
+    io.emit("typingUsers", Array.from(typingUsers));
+  });
 
   socket.on("stopTyping", () => {
     const username = userlist.get(socket.id) || "Unknown user";
-    typingUsers.delete(username); //Pulls users username
+    typingUsers.delete(username);
 
-    io.emit("typingUsers", Array.from(typingUsers)); //Removes user from list
-
-    });
-
-  // AC-02.3: notify all connected users that someone joined.
-  io.emit(
-    "status",
-    username +
-      " joined the chat. Number of connected clients: " +
-      userlist.size
-  );
+    io.emit("typingUsers", Array.from(typingUsers));
+  });
 
   // ===========================================================================
   // Use-Case-01: Send Message
@@ -123,7 +126,6 @@ io.on("connection", (socket) => {
       "message",
       sender + " says: " + message
     );
-
   });
 
   // ===========================================================================
@@ -131,8 +133,11 @@ io.on("connection", (socket) => {
   // ===========================================================================
 
   socket.on("disconnect", () => {
-    const disconnectedUsername =
-      userlist.get(socket.id) || "Unknown user";
+    const disconnectedUsername = userlist.get(socket.id);
+
+    if (!disconnectedUsername) {
+      return;
+    }
 
     userlist.delete(socket.id);
     typingUsers.delete(disconnectedUsername);
@@ -140,8 +145,12 @@ io.on("connection", (socket) => {
     io.emit(
       "typingUsers",
       Array.from(typingUsers)
-    );//Removes disconencted users from typing list
+    );
 
+    io.emit(
+      "connected-users",
+      Array.from(userlist.values())
+    );
 
     console.log(
       "Client disconnected - socket ID: " +
@@ -154,7 +163,7 @@ io.on("connection", (socket) => {
     io.emit(
       "status",
       disconnectedUsername +
-        " left the chat. Number of connected clients: " +
+        " left the chat. Active users: " +
         userlist.size
     );
   });
