@@ -23,6 +23,10 @@ const mainChat = document.getElementById("main-chat");
 const joinButton = document.getElementById("join-button");
 const usernameInput = document.getElementById("username");
 
+const typingIndicator = document.getElementById("typing-indicator");
+let typingTimer;
+let isTyping = false;//Typing indicator defined
+
 if (
   !sendButtonElement ||
   !chatMessageInput ||
@@ -77,6 +81,23 @@ chatMessageInput.addEventListener("keydown", (event) => {
   }
 });
 
+chatMessageInput.addEventListener(
+  "input",
+  () => {
+    if (!isTyping) {
+      isTyping = true;
+      socket.emit("typing");
+    }
+
+    clearTimeout(typingTimer);
+
+    typingTimer = setTimeout(() => {
+      isTyping = false;
+      socket.emit("stopTyping");
+    }, 1000);
+  }
+);//Event listener for if a user is typing
+
 // =============================================================================
 // Use-Case: Join Chat
 // =============================================================================
@@ -123,6 +144,9 @@ function sendMessage() {
   // AC-01.5: clear and refocus the input after sending.
   chatMessageInput.value = "";
   chatMessageInput.focus();
+
+  socket.emit("stopTyping");
+  isTyping = false;
 }
 
 // =============================================================================
@@ -183,3 +207,15 @@ function displayStatus(data) {
   // AC-02.4: keep the newest status event visible.
   statusElement.scrollTop = statusElement.scrollHeight;
 }
+
+socket.on("typingUsers", (users) => {
+  if (users.length === 0) {
+    typingIndicator.textContent = "";
+  }
+  else if (users.length === 1) {
+    typingIndicator.textContent = users[0] + " is typing...";
+  }
+  else {
+    typingIndicator.textContent = users.join(", ") + " are typing...";
+  }
+});

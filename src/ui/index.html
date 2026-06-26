@@ -87,6 +87,13 @@
       color: #168216;
       font-weight: bold;
     }
+
+    #typing-indicator {
+      height: 20px;
+      margin-bottom: 15px;
+      font-style: italic;
+      color: #666;
+    }
   </style>
 </head>
 
@@ -99,13 +106,19 @@
 
   <div id="login-screen" class="login-container">
     <label for="username">Enter your username to join:</label>
+
     <input
       id="username"
       type="text"
       placeholder="Username..."
       style="padding: 10px; font-size: 16px;"
     >
-    <button id="join-button" style="padding: 10px; font-size: 16px; cursor: pointer;">
+
+    <button
+      id="join-button"
+      type="button"
+      style="padding: 10px; font-size: 16px; cursor: pointer;"
+    >
       Join Chat
     </button>
   </div>
@@ -128,6 +141,8 @@
         Send
       </button>
     </div>
+
+    <div id="typing-indicator"></div>
 
     <h2>System Status</h2>
 

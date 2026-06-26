@@ -21,6 +21,8 @@ const PORT = process.env.PORT || 8080;
 // In-memory collection that maps each Socket.IO ID to a username.
 const userlist = new Map();
 
+const typingUsers = new Set();
+
 // =============================================================================
 // Lecture 11: Content Security Policy
 // =============================================================================
@@ -63,12 +65,36 @@ io.on("connection", (socket) => {
     const name = chosenUsername.trim();
     userlist.set(socket.id, name);
 
-    console.log("Debug> User " + socket.id + " joined as: " + name);
+    console.log(
+      "New client connected - socket ID: " +
+        socket.id +
+        ", username: " +
+        name
+    );
+
+    io.emit(
+      "connected-users",
+      Array.from(userlist.values())
+    );
 
     io.emit(
       "status",
       name + " joined the chat. Active users: " + userlist.size
     );
+  });
+
+  socket.on("typing", () => {
+    const username = userlist.get(socket.id) || "Unknown user";
+    typingUsers.add(username);
+
+    io.emit("typingUsers", Array.from(typingUsers));
+  });
+
+  socket.on("stopTyping", () => {
+    const username = userlist.get(socket.id) || "Unknown user";
+    typingUsers.delete(username);
+
+    io.emit("typingUsers", Array.from(typingUsers));
   });
 
   // ===========================================================================
@@ -107,26 +133,39 @@ io.on("connection", (socket) => {
   // ===========================================================================
 
   socket.on("disconnect", () => {
-    const username = userlist.get(socket.id);
+    const disconnectedUsername = userlist.get(socket.id);
 
-    if (username) {
-      userlist.delete(socket.id);
-
-      console.log(
-        "Client disconnected - socket ID: " +
-          socket.id +
-          ", username: " +
-          username
-      );
-
-      // Notify remaining clients that the user left.
-      io.emit(
-        "status",
-        username +
-          " left the chat. Active users: " +
-          userlist.size
-      );
+    if (!disconnectedUsername) {
+      return;
     }
+
+    userlist.delete(socket.id);
+    typingUsers.delete(disconnectedUsername);
+
+    io.emit(
+      "typingUsers",
+      Array.from(typingUsers)
+    );
+
+    io.emit(
+      "connected-users",
+      Array.from(userlist.values())
+    );
+
+    console.log(
+      "Client disconnected - socket ID: " +
+        socket.id +
+        ", username: " +
+        disconnectedUsername
+    );
+
+    // Notify remaining clients that the user left.
+    io.emit(
+      "status",
+      disconnectedUsername +
+        " left the chat. Active users: " +
+        userlist.size
+    );
   });
 });
 
