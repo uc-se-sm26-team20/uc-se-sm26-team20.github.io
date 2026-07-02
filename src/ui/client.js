@@ -180,4 +180,54 @@ function sendPrivateMessage() {
 
   privateChatInput.value = "";
   privateChatInput.focus();
+}// =============================================================================
+// Receive Online User List
+// =============================================================================
+
+socket.on("online-users", (users) => {
+  privateUserSelect.innerHTML =
+    '<option value="">Select a user</option>';
+
+  users.forEach((user) => {
+    if (user.socketId === socket.id) {
+      return;
+    }
+
+    const option = document.createElement("option");
+    option.value = user.socketId;
+    option.textContent = user.username;
+
+    privateUserSelect.appendChild(option);
+  });
+});
+
+
+// =============================================================================
+// Receive Private Messages
+// =============================================================================
+
+socket.on("private-message", displayPrivateMessage);
+
+function displayPrivateMessage(data) {
+  const messageElement = document.createElement("div");
+  const timestamp = new Date().toLocaleTimeString();
+
+  const from = DOMPurify.sanitize(String(data.from));
+  const to = DOMPurify.sanitize(String(data.to));
+  const message = DOMPurify.sanitize(String(data.message));
+
+  messageElement.innerHTML =
+    '<span class="message-time">[' +
+    timestamp +
+    ']</span> <strong>Private</strong> ' +
+    from +
+    ' → ' +
+    to +
+    ': ' +
+    message;
+
+  privateResponsesElement.appendChild(messageElement);
+
+  privateResponsesElement.scrollTop =
+    privateResponsesElement.scrollHeight;
 }

@@ -21,6 +21,15 @@ const PORT = process.env.PORT || 8092;
 // In-memory collection that maps each Socket.IO ID to a username.
 const userlist = new Map();
 
+function sendOnlineUsers() {
+  const users = Array.from(userlist, ([socketId, username]) => ({
+    socketId,
+    username
+  }));
+
+  io.emit("online-users", users);
+}
+
 // =============================================================================
 // Lecture 11: Content Security Policy
 // =============================================================================
@@ -62,6 +71,8 @@ io.on("connection", (socket) => {
     "User_" + (socketIdentifier || "00000");
 
   userlist.set(socket.id, username);
+  sendOnlineUsers();
+
 
   console.log(
     "New client connected - socket ID: " +
@@ -109,15 +120,56 @@ io.on("connection", (socket) => {
     );
   });
 
+
+  socket.on("private-message", (data) => {
+    if (!data || typeof data !== "object") {
+      return;
+    }
+
+    const recipientSocketId = data.recipientSocketId;
+    const message = String(data.message || "").trim();
+
+    if (!recipientSocketId || !message) {
+      return;
+    }
+
+    const sender = userlist.get(socket.id) || "Unknown user";
+    const recipient = userlist.get(recipientSocketId);
+
+    if (!recipient) {
+      socket.emit("private-message", {
+        from: "System",
+        to: sender,
+        message: "That user is no longer online."
+      });
+      return;
+    }
+
+    const privateMessage = {
+      from: sender,
+      to: recipient,
+      message: message
+    };
+
+    socket.emit("private-message", privateMessage);
+    io.to(recipientSocketId).emit("private-message", privateMessage);
+  });
+
+
   // ===========================================================================
   // Use-Case-02: Disconnect notification
   // ===========================================================================
+
+
+
 
   socket.on("disconnect", () => {
     const disconnectedUsername =
       userlist.get(socket.id) || "Unknown user";
 
     userlist.delete(socket.id);
+    sendOnlineUsers();
+
 
     console.log(
       "Client disconnected - socket ID: " +
