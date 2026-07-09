@@ -23,11 +23,8 @@ const userlist = new Map();
 
 const typingUsers = new Set();
 const userGroups = new Map();
-const availableGroups = [
-  "Neighborhood",
-  "Local Government",
-  "Events"
-];
+const GLOBAL_GROUP = "Global";
+const availableGroups = [GLOBAL_GROUP];
 
 // =============================================================================
 // Lecture 11: Content Security Policy
@@ -75,6 +72,8 @@ io.on("connection", (socket) => {
       userGroups.set(name, new Set());
     }
 
+    userGroups.get(name).add(GLOBAL_GROUP);
+
     console.log(
       "New client connected - socket ID: " +
         socket.id +
@@ -118,6 +117,10 @@ io.on("connection", (socket) => {
 
   socket.on("delete-user-group", (data) => {
     updateUserGroup(socket, data, "delete");
+  });
+
+  socket.on("create-group", (groupName) => {
+    createGroup(socket, groupName);
   });
 
   // ===========================================================================
@@ -227,8 +230,26 @@ function updateUserGroup(socket, data, action) {
 
   const username = data.username.trim();
   const group = data.group.trim();
+  const requester = userlist.get(socket.id);
+  const requesterGroups = userGroups.get(requester) || new Set();
 
   if (!username || !availableGroups.includes(group)) {
+    return;
+  }
+
+  if (action === "delete" && group === GLOBAL_GROUP) {
+    socket.emit(
+      "group-update-status",
+      "Users cannot be removed from the Global group."
+    );
+    return;
+  }
+
+  if (!requesterGroups.has(group)) {
+    socket.emit(
+      "group-update-status",
+      "You must be in " + group + " to update its members."
+    );
     return;
   }
 
@@ -259,6 +280,33 @@ function updateUserGroup(socket, data, action) {
       group +
       "."
   );
+}
+
+function createGroup(socket, groupName) {
+  if (typeof groupName !== "string" || !groupName.trim()) {
+    return;
+  }
+
+  const creator = userlist.get(socket.id);
+
+  if (!creator) {
+    return;
+  }
+
+  const group = groupName.trim();
+
+  if (availableGroups.includes(group)) {
+    socket.emit("group-update-status", "Group already exists: " + group);
+    return;
+  }
+
+  availableGroups.push(group);
+  const creatorGroups = userGroups.get(creator) || new Set();
+  creatorGroups.add(group);
+  userGroups.set(creator, creatorGroups);
+
+  sendUserGroups(creator);
+  socket.emit("group-update-status", "Group created: " + group);
 }
 
 function sendUserGroups(username) {

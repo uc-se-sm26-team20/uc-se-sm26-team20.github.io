@@ -22,7 +22,9 @@ const loginScreen = document.getElementById("login-screen");
 const mainChat = document.getElementById("main-chat");
 const joinButton = document.getElementById("join-button");
 const usernameInput = document.getElementById("username");
-const groupTabs = document.querySelectorAll(".group-tab");
+const groupTabsContainer = document.querySelector(".group-tabs");
+const newGroupInput = document.getElementById("new-group-name");
+const createGroupButton = document.getElementById("create-group-button");
 const groupAccountInput = document.getElementById("group-account-name");
 const addUserGroupButton = document.getElementById("add-user-group-button");
 const deleteUserGroupButton = document.getElementById(
@@ -34,7 +36,7 @@ const myGroupsElement = document.getElementById("my-groups");
 const typingIndicator = document.getElementById("typing-indicator");
 let typingTimer;
 let isTyping = false;//Typing indicator defined
-let selectedGroup = "Neighborhood";
+let selectedGroup = "";
 
 if (
   !sendButtonElement ||
@@ -45,6 +47,9 @@ if (
   !mainChat ||
   !joinButton ||
   !usernameInput ||
+  !groupTabsContainer ||
+  !newGroupInput ||
+  !createGroupButton ||
   !groupAccountInput ||
   !addUserGroupButton ||
   !deleteUserGroupButton ||
@@ -112,17 +117,26 @@ chatMessageInput.addEventListener(
   }
 );//Event listener for if a user is typing
 
-groupTabs.forEach((tab) => {
-  tab.addEventListener("click", () => {
-    groupTabs.forEach((groupTab) => {
-      groupTab.classList.remove("active");
-      groupTab.setAttribute("aria-selected", "false");
-    });
+groupTabsContainer.addEventListener("click", (event) => {
+  const tab = event.target.closest(".group-tab");
 
-    tab.classList.add("active");
-    tab.setAttribute("aria-selected", "true");
-    selectedGroup = tab.textContent.trim();
-  });
+  if (!tab) {
+    return;
+  }
+
+  selectGroup(tab.textContent.trim());
+});
+
+createGroupButton.addEventListener("click", () => {
+  const groupName = newGroupInput.value.trim();
+
+  if (!groupName) {
+    groupUpdateMessage.textContent = "Enter a group name first.";
+    return;
+  }
+
+  socket.emit("create-group", groupName);
+  newGroupInput.value = "";
 });
 
 addUserGroupButton.addEventListener("click", () => {
@@ -171,6 +185,11 @@ function sendMessage() {
     return;
   }
 
+  if (!selectedGroup) {
+    groupUpdateMessage.textContent = "Select a group chat first.";
+    return;
+  }
+
   console.log(`Debug> Chat message: ${message}`);
 
   // AC-01.3: send the message to the selected group.
@@ -190,6 +209,11 @@ function sendMessage() {
 function updateUserGroup(eventName) {
   const username = groupAccountInput.value.trim();
 
+  if (!selectedGroup) {
+    groupUpdateMessage.textContent = "Select a group chat first.";
+    return;
+  }
+
   if (!username) {
     groupUpdateMessage.textContent = "Enter a username first.";
     return;
@@ -198,6 +222,46 @@ function updateUserGroup(eventName) {
   socket.emit(eventName, {
     username,
     group: selectedGroup
+  });
+}
+
+function renderGroupTabs(groups) {
+  if (!Array.isArray(groups)) {
+    return;
+  }
+
+  if (!groups.includes(selectedGroup)) {
+    selectedGroup = groups[0] || "";
+  }
+
+  groupTabsContainer.innerHTML = "";
+
+  groups.forEach((group) => {
+    const tab = document.createElement("button");
+    tab.className = "group-tab";
+    tab.type = "button";
+    tab.setAttribute("role", "tab");
+    tab.textContent = group;
+
+    if (group === selectedGroup) {
+      tab.classList.add("active");
+      tab.setAttribute("aria-selected", "true");
+    }
+    else {
+      tab.setAttribute("aria-selected", "false");
+    }
+
+    groupTabsContainer.appendChild(tab);
+  });
+}
+
+function selectGroup(group) {
+  selectedGroup = group;
+
+  document.querySelectorAll(".group-tab").forEach((tab) => {
+    const isSelected = tab.textContent.trim() === selectedGroup;
+    tab.classList.toggle("active", isSelected);
+    tab.setAttribute("aria-selected", String(isSelected));
   });
 }
 
@@ -243,6 +307,8 @@ socket.on("group-update-status", (message) => {
 });
 
 socket.on("user-groups", (groups) => {
+  renderGroupTabs(groups);
+
   if (!Array.isArray(groups) || groups.length === 0) {
     myGroupsElement.textContent = "My group chats: none";
     return;

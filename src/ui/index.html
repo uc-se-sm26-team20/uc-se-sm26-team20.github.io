@@ -73,6 +73,12 @@
       padding: 8px;
     }
 
+    #new-group-name {
+      flex: 1;
+      min-width: 180px;
+      padding: 8px;
+    }
+
     .group-management button {
       padding: 8px 12px;
       cursor: pointer;
@@ -182,34 +188,7 @@
       class="group-tabs"
       role="tablist"
       aria-label="User groups"
-    >
-      <button
-        class="group-tab active"
-        type="button"
-        role="tab"
-        aria-selected="true"
-      >
-        Neighborhood
-      </button>
-
-      <button
-        class="group-tab"
-        type="button"
-        role="tab"
-        aria-selected="false"
-      >
-        Local Government
-      </button>
-
-      <button
-        class="group-tab"
-        type="button"
-        role="tab"
-        aria-selected="false"
-      >
-        Events
-      </button>
-    </div>
+    ></div>
 
     <div
       id="my-groups"
@@ -222,6 +201,22 @@
       <label for="group-account-name">
         Organizer group management
       </label>
+
+      <div class="group-management-controls">
+        <input
+          id="new-group-name"
+          type="text"
+          placeholder="New group name"
+          aria-label="New group name"
+        >
+
+        <button
+          id="create-group-button"
+          type="button"
+        >
+          Create Group
+        </button>
+      </div>
 
       <div class="group-management-controls">
         <input
