@@ -125,29 +125,43 @@ io.on("connection", (socket) => {
   // ===========================================================================
 
   socket.on("message", (data) => {
-    // AC-01.2: ignore non-string and empty messages.
-    if (typeof data !== "string") {
+    // AC-01.2: ignore invalid and empty messages.
+    if (
+      !data ||
+      typeof data.message !== "string" ||
+      typeof data.group !== "string"
+    ) {
       return;
     }
 
-    const message = data.trim();
+    const message = data.message.trim();
+    const group = data.group.trim();
 
-    if (!message) {
+    if (!message || !availableGroups.includes(group)) {
       return;
     }
 
     // AC-01.1 and AC-01.4: identify the sender.
     const sender =
       userlist.get(socket.id) || "Unknown user";
+    const senderGroups = userGroups.get(sender) || new Set();
+
+    if (!senderGroups.has(group)) {
+      socket.emit(
+        "status",
+        "You are not in the " + group + " group."
+      );
+      return;
+    }
 
     console.log(
-      'Debug> "' + sender + '" sent: ' + message
+      'Debug> "' + sender + '" sent to ' + group + ": " + message
     );
 
-    // AC-01.3: broadcast the message to every connected client.
-    io.emit(
+    sendToGroup(
+      group,
       "message",
-      sender + " says: " + message
+      "[" + group + "] " + sender + " says: " + message
     );
   });
 
@@ -237,14 +251,36 @@ function updateUserGroup(socket, data, action) {
   );
 
   sendUserGroups(username);
+  sendToUser(
+    username,
+    "status",
+    "You were " +
+      (action === "add" ? "added to " : "removed from ") +
+      group +
+      "."
+  );
 }
 
 function sendUserGroups(username) {
   const groups = Array.from(userGroups.get(username) || []);
 
+  sendToUser(username, "user-groups", groups);
+}
+
+function sendToGroup(group, eventName, payload) {
+  userlist.forEach((connectedUsername, socketId) => {
+    const groups = userGroups.get(connectedUsername) || new Set();
+
+    if (groups.has(group)) {
+      io.to(socketId).emit(eventName, payload);
+    }
+  });
+}
+
+function sendToUser(username, eventName, payload) {
   userlist.forEach((connectedUsername, socketId) => {
     if (connectedUsername === username) {
-      io.to(socketId).emit("user-groups", groups);
+      io.to(socketId).emit(eventName, payload);
     }
   });
 }

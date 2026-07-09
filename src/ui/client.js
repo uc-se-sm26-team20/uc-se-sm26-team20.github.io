@@ -173,8 +173,11 @@ function sendMessage() {
 
   console.log(`Debug> Chat message: ${message}`);
 
-  // AC-01.3: send the message to the server.
-  socket.emit("message", message);
+  // AC-01.3: send the message to the selected group.
+  socket.emit("message", {
+    group: selectedGroup,
+    message
+  });
 
   // AC-01.5: clear and refocus the input after sending.
   chatMessageInput.value = "";
