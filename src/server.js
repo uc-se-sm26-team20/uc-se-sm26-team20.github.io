@@ -21,14 +21,10 @@ const PORT = process.env.PORT || 8092;
 // In-memory collection that maps each Socket.IO ID to a username.
 const userlist = new Map();
 
-function sendOnlineUsers() {
-  const users = Array.from(userlist, ([socketId, username]) => ({
-    socketId,
-    username
-  }));
-
-  io.emit("online-users", users);
-}
+const typingUsers = new Set();
+const userGroups = new Map();
+const GLOBAL_GROUP = "Global";
+const availableGroups = [GLOBAL_GROUP];
 
 // =============================================================================
 // Lecture 11: Content Security Policy
@@ -61,62 +57,114 @@ app.use(express.static(path.join(__dirname, "ui")));
 // =============================================================================
 
 io.on("connection", (socket) => {
-  // Create a readable username from the client's unique socket ID.
-  const socketIdentifier = socket.id
-    .replace(/[^a-zA-Z0-9]/g, "")
-    .slice(-5)
-    .toUpperCase();
+  console.log("New connection established - socket ID: " + socket.id);
 
-  const username =
-    "User_" + (socketIdentifier || "00000");
+  // AC-02.3: notify all connected users that someone joined after they provide a name.
+  socket.on("join", (chosenUsername) => {
+    if (typeof chosenUsername !== "string" || !chosenUsername.trim()) {
+      return;
+    }
 
-  userlist.set(socket.id, username);
-  sendOnlineUsers();
+    const name = chosenUsername.trim();
+    userlist.set(socket.id, name);
 
+    if (!userGroups.has(name)) {
+      userGroups.set(name, new Set());
+    }
 
-  console.log(
-    "New client connected - socket ID: " +
-      socket.id +
-      ", username: " +
-      username
-  );
+    userGroups.get(name).add(GLOBAL_GROUP);
 
-  // AC-02.3: notify all connected users that someone joined.
-  io.emit(
-    "status",
-    username +
-      " joined the chat. Number of connected clients: " +
-      userlist.size
-  );
+    console.log(
+      "New client connected - socket ID: " +
+        socket.id +
+        ", username: " +
+        name
+    );
+
+    io.emit(
+      "connected-users",
+      Array.from(userlist.values())
+    );
+
+    io.emit(
+      "status",
+      name + " joined the chat. Active users: " + userlist.size
+    );
+
+    socket.emit(
+      "user-groups",
+      Array.from(userGroups.get(name))
+    );
+  });
+
+  socket.on("typing", () => {
+    const username = userlist.get(socket.id) || "Unknown user";
+    typingUsers.add(username);
+
+    io.emit("typingUsers", Array.from(typingUsers));
+  });
+
+  socket.on("stopTyping", () => {
+    const username = userlist.get(socket.id) || "Unknown user";
+    typingUsers.delete(username);
+
+    io.emit("typingUsers", Array.from(typingUsers));
+  });
+
+  socket.on("add-user-group", (data) => {
+    updateUserGroup(socket, data, "add");
+  });
+
+  socket.on("delete-user-group", (data) => {
+    updateUserGroup(socket, data, "delete");
+  });
+
+  socket.on("create-group", (groupName) => {
+    createGroup(socket, groupName);
+  });
 
   // ===========================================================================
   // Use-Case-01: Send Message
   // ===========================================================================
 
   socket.on("message", (data) => {
-    // AC-01.2: ignore non-string and empty messages.
-    if (typeof data !== "string") {
+    // AC-01.2: ignore invalid and empty messages.
+    if (
+      !data ||
+      typeof data.message !== "string" ||
+      typeof data.group !== "string"
+    ) {
       return;
     }
 
-    const message = data.trim();
+    const message = data.message.trim();
+    const group = data.group.trim();
 
-    if (!message) {
+    if (!message || !availableGroups.includes(group)) {
       return;
     }
 
     // AC-01.1 and AC-01.4: identify the sender.
     const sender =
       userlist.get(socket.id) || "Unknown user";
+    const senderGroups = userGroups.get(sender) || new Set();
+
+    if (!senderGroups.has(group)) {
+      socket.emit(
+        "status",
+        "You are not in the " + group + " group."
+      );
+      return;
+    }
 
     console.log(
-      'Debug> "' + sender + '" sent: ' + message
+      'Debug> "' + sender + '" sent to ' + group + ": " + message
     );
 
-    // AC-01.3: broadcast the message to every connected client.
-    io.emit(
+    sendToGroup(
+      group,
       "message",
-      sender + " says: " + message
+      "[" + group + "] " + sender + " says: " + message
     );
   });
 
@@ -164,12 +212,24 @@ io.on("connection", (socket) => {
 
 
   socket.on("disconnect", () => {
-    const disconnectedUsername =
-      userlist.get(socket.id) || "Unknown user";
+    const disconnectedUsername = userlist.get(socket.id);
+
+    if (!disconnectedUsername) {
+      return;
+    }
 
     userlist.delete(socket.id);
-    sendOnlineUsers();
+    typingUsers.delete(disconnectedUsername);
 
+    io.emit(
+      "typingUsers",
+      Array.from(typingUsers)
+    );
+
+    io.emit(
+      "connected-users",
+      Array.from(userlist.values())
+    );
 
     console.log(
       "Client disconnected - socket ID: " +
@@ -182,7 +242,7 @@ io.on("connection", (socket) => {
     io.emit(
       "status",
       disconnectedUsername +
-        " left the chat. Number of connected clients: " +
+        " left the chat. Active users: " +
         userlist.size
     );
   });
@@ -197,3 +257,117 @@ server.listen(PORT, () => {
     "Team 20 Messenger server running on port " + PORT
   );
 });
+
+function updateUserGroup(socket, data, action) {
+  if (
+    !data ||
+    typeof data.username !== "string" ||
+    typeof data.group !== "string"
+  ) {
+    return;
+  }
+
+  const username = data.username.trim();
+  const group = data.group.trim();
+  const requester = userlist.get(socket.id);
+  const requesterGroups = userGroups.get(requester) || new Set();
+
+  if (!username || !availableGroups.includes(group)) {
+    return;
+  }
+
+  if (action === "delete" && group === GLOBAL_GROUP) {
+    socket.emit(
+      "group-update-status",
+      "Users cannot be removed from the Global group."
+    );
+    return;
+  }
+
+  if (!requesterGroups.has(group)) {
+    socket.emit(
+      "group-update-status",
+      "You must be in " + group + " to update its members."
+    );
+    return;
+  }
+
+  const groups = userGroups.get(username) || new Set();
+
+  if (action === "add") {
+    groups.add(group);
+  }
+  else {
+    groups.delete(group);
+  }
+
+  userGroups.set(username, groups);
+
+  socket.emit(
+    "group-update-status",
+    username +
+      " groups: " +
+      (Array.from(groups).join(", ") || "none")
+  );
+
+  sendUserGroups(username);
+  sendToUser(
+    username,
+    "status",
+    "You were " +
+      (action === "add" ? "added to " : "removed from ") +
+      group +
+      "."
+  );
+}
+
+function createGroup(socket, groupName) {
+  if (typeof groupName !== "string" || !groupName.trim()) {
+    return;
+  }
+
+  const creator = userlist.get(socket.id);
+
+  if (!creator) {
+    return;
+  }
+
+  const group = groupName.trim();
+
+  if (availableGroups.includes(group)) {
+    socket.emit("group-update-status", "Group already exists: " + group);
+    return;
+  }
+
+  availableGroups.push(group);
+  const creatorGroups = userGroups.get(creator) || new Set();
+  creatorGroups.add(group);
+  userGroups.set(creator, creatorGroups);
+
+  sendUserGroups(creator);
+  socket.emit("group-update-status", "Group created: " + group);
+}
+
+function sendUserGroups(username) {
+  const groups = Array.from(userGroups.get(username) || []);
+
+  sendToUser(username, "user-groups", groups);
+}
+
+function sendToGroup(group, eventName, payload) {
+  userlist.forEach((connectedUsername, socketId) => {
+    const groups = userGroups.get(connectedUsername) || new Set();
+
+    if (groups.has(group)) {
+      io.to(socketId).emit(eventName, payload);
+    }
+  });
+}
+
+function sendToUser(username, eventName, payload) {
+  userlist.forEach((connectedUsername, socketId) => {
+    if (connectedUsername === username) {
+      io.to(socketId).emit(eventName, payload);
+    }
+  });
+}

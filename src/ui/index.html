@@ -11,55 +11,202 @@
   <title>Team 20 Messenger</title>
 
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      max-width: 760px;
-      margin: 40px auto;
+      max-width: 1120px;
+      margin: 35px auto;
       padding: 0 20px;
       font-family: Arial, Helvetica, sans-serif;
       line-height: 1.5;
+      background-color: #f3f5f8;
+      color: #222;
     }
 
     h1 {
       margin-bottom: 5px;
     }
 
+    h2 {
+      margin-top: 0;
+    }
+
     .subtitle {
       margin-top: 0;
       margin-bottom: 25px;
+      color: #555;
+    }
+
+    .login-container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      max-width: 400px;
+      margin: 100px auto;
+      padding: 30px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background-color: #ffffff;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .group-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .group-tab {
+      padding: 10px 14px;
+      border: 1px solid #ccc;
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      background-color: #e9edf3;
+      cursor: pointer;
+    }
+
+    .group-tab.active {
+      background-color: #ffffff;
+      font-weight: bold;
+    }
+
+    #my-groups {
+      margin-bottom: 20px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .chat-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 310px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .chat-column,
+    .side-column {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .panel {
+      padding: 18px;
+      border: 1px solid #d4d8df;
+      border-radius: 10px;
+      background-color: #ffffff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .group-management {
+      padding: 15px;
+    }
+
+    .group-management-controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    #group-account-name,
+    #new-group-name {
+      flex: 1;
+      min-width: 180px;
+      padding: 8px;
+    }
+
+    .group-management button {
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+
+    #group-update-message {
+      margin-top: 8px;
+      min-height: 20px;
+      color: #444;
     }
 
     .message-controls {
       display: flex;
       gap: 10px;
-      margin-bottom: 25px;
+      margin-bottom: 12px;
     }
 
     #chat-message {
       flex: 1;
       min-width: 0;
-      padding: 10px;
+      padding: 12px;
       font-size: 16px;
+      border: 1px solid #bbb;
+      border-radius: 8px;
     }
 
     #send-button {
-      padding: 10px 20px;
+      padding: 12px 22px;
       font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      background-color: #2431e5;
+      color: #ffffff;
       cursor: pointer;
+    }
+
+    #send-button:hover {
+      background-color: #1d27b8;
+    }
+
+    #typing-indicator {
+      height: 22px;
+      margin-bottom: 12px;
+      font-style: italic;
+      color: #666;
     }
 
     .message-area {
       width: 100%;
-      height: 130px;
       box-sizing: border-box;
-      padding: 10px;
-      margin-bottom: 20px;
+      padding: 12px;
       overflow-y: auto;
-      border: 1px solid #777;
-      background-color: #ffffff;
+      border: 1px solid #cfd4dc;
+      border-radius: 8px;
+      background-color: #f8f9fb;
+    }
+
+    #responses {
+      height: 420px;
     }
 
     #status {
-      background-color: #f5f5f5;
+      height: 250px;
+      background-color: #f8f9fb;
+    }
+
+    #responses > div {
+      max-width: 92%;
+      margin-bottom: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background-color: #ffffff;
+      border: 1px solid #e1e4ea;
+      overflow-wrap: anywhere;
+    }
+
+    #status > div {
+      margin-bottom: 8px;
+      padding: 8px 10px;
+      border-left: 4px solid #168216;
+      background-color: #ffffff;
+      border-radius: 6px;
+      font-size: 14px;
+      overflow-wrap: anywhere;
     }
 
     .message-time {
@@ -89,6 +236,38 @@
   padding: 8px;
   margin-bottom: 10px;
 }
+
+    .online-users-box {
+      min-height: 150px;
+    }
+
+    #online-users-count {
+      margin-bottom: 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background-color: #eef1ff;
+      font-weight: bold;
+    }
+
+    #online-users-list {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    #online-users-list li {
+      margin-bottom: 6px;
+      overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 850px) {
+      .chat-layout {
+        grid-template-columns: 1fr;
+      }
+
+      #responses {
+        height: 330px;
+      }
+    }
   </style>
 </head>
 
@@ -99,31 +278,38 @@
     EECE/CS 3093C Software Engineering — Summer 2026
   </p>
 
-  <div class="message-controls">
+  <div id="login-screen" class="login-container">
+    <label for="username">Enter your username to join:</label>
+
     <input
-      id="chat-message"
+      id="username"
       type="text"
-      maxlength="500"
-      autocomplete="off"
-      placeholder="Type a message..."
-      aria-label="Chat message"
+      placeholder="Username..."
+      style="padding: 10px; font-size: 16px;"
     >
 
     <button
-      id="send-button"
+      id="join-button"
       type="button"
+      style="padding: 10px; font-size: 16px; cursor: pointer;"
     >
-      Send
+      Join Chat
     </button>
   </div>
 
-  <h2>System Status</h2>
+  <div id="main-chat" class="hidden">
+    <div
+      class="group-tabs"
+      role="tablist"
+      aria-label="User groups"
+    ></div>
 
-  <div
-    id="status"
-    class="message-area"
-    aria-live="polite"
-  ></div>
+    <div
+      id="my-groups"
+      aria-live="polite"
+    >
+      My group chats: none
+    </div>
 
   <h2>Public Chat</h2>
 
@@ -170,6 +356,115 @@
     </button>
   </div>
 </div>
+    <div class="chat-layout">
+      <div class="chat-column">
+        <div class="panel group-management">
+          <label for="group-account-name">
+            Organizer group management
+          </label>
+
+          <div class="group-management-controls">
+            <input
+              id="new-group-name"
+              type="text"
+              placeholder="New group name"
+              aria-label="New group name"
+            >
+
+            <button
+              id="create-group-button"
+              type="button"
+            >
+              Create Group
+            </button>
+          </div>
+
+          <div class="group-management-controls">
+            <input
+              id="group-account-name"
+              type="text"
+              placeholder="Username"
+              aria-label="Username to update"
+            >
+
+            <button
+              id="add-user-group-button"
+              type="button"
+            >
+              Add Selected Group
+            </button>
+
+            <button
+              id="delete-user-group-button"
+              type="button"
+            >
+              Delete Selected Group
+            </button>
+          </div>
+
+          <div
+            id="group-update-message"
+            aria-live="polite"
+          ></div>
+        </div>
+
+        <div class="panel">
+          <h2>Chat Responses</h2>
+
+          <div class="message-controls">
+            <input
+              id="chat-message"
+              type="text"
+              maxlength="500"
+              autocomplete="off"
+              placeholder="Type a message..."
+              aria-label="Chat message"
+            >
+
+            <button
+              id="send-button"
+              type="button"
+            >
+              Send
+            </button>
+          </div>
+
+          <div id="typing-indicator"></div>
+
+          <div
+            id="responses"
+            class="message-area"
+            aria-live="polite"
+          ></div>
+        </div>
+      </div>
+
+      <div class="side-column">
+        <div
+          class="panel online-users-box"
+          aria-live="polite"
+        >
+          <h2>Online Users</h2>
+
+          <div id="online-users-count">
+            0 users online
+          </div>
+
+          <ul id="online-users-list"></ul>
+        </div>
+
+        <div class="panel">
+          <h2>System Status</h2>
+
+          <div
+            id="status"
+            class="message-area"
+            aria-live="polite"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Socket.IO client library supplied by the Node.js server. -->
   <script src="/socket.io/socket.io.js"></script>
