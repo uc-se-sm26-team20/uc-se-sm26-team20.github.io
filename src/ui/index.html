@@ -54,6 +54,35 @@
       font-weight: bold;
     }
 
+    .group-management {
+      margin-bottom: 25px;
+      padding: 12px;
+      border: 1px solid #ccc;
+      background-color: #fafafa;
+    }
+
+    .group-management-controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    #group-account-name {
+      flex: 1;
+      min-width: 180px;
+      padding: 8px;
+    }
+
+    .group-management button {
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+
+    #group-update-message {
+      margin-top: 8px;
+      min-height: 20px;
+    }
+
     #chat-message {
       flex: 1;
       min-width: 0;
@@ -175,6 +204,40 @@
       >
         Events
       </button>
+    </div>
+
+    <div class="group-management">
+      <label for="group-account-name">
+        Organizer group management
+      </label>
+
+      <div class="group-management-controls">
+        <input
+          id="group-account-name"
+          type="text"
+          placeholder="Username"
+          aria-label="Username to update"
+        >
+
+        <button
+          id="add-user-group-button"
+          type="button"
+        >
+          Add Selected Group
+        </button>
+
+        <button
+          id="delete-user-group-button"
+          type="button"
+        >
+          Delete Selected Group
+        </button>
+      </div>
+
+      <div
+        id="group-update-message"
+        aria-live="polite"
+      ></div>
     </div>
 
     <div class="message-controls">

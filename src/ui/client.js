@@ -23,10 +23,17 @@ const mainChat = document.getElementById("main-chat");
 const joinButton = document.getElementById("join-button");
 const usernameInput = document.getElementById("username");
 const groupTabs = document.querySelectorAll(".group-tab");
+const groupAccountInput = document.getElementById("group-account-name");
+const addUserGroupButton = document.getElementById("add-user-group-button");
+const deleteUserGroupButton = document.getElementById(
+  "delete-user-group-button"
+);
+const groupUpdateMessage = document.getElementById("group-update-message");
 
 const typingIndicator = document.getElementById("typing-indicator");
 let typingTimer;
 let isTyping = false;//Typing indicator defined
+let selectedGroup = "Neighborhood";
 
 if (
   !sendButtonElement ||
@@ -36,7 +43,11 @@ if (
   !loginScreen ||
   !mainChat ||
   !joinButton ||
-  !usernameInput
+  !usernameInput ||
+  !groupAccountInput ||
+  !addUserGroupButton ||
+  !deleteUserGroupButton ||
+  !groupUpdateMessage
 ) {
   throw new Error("One or more required messenger UI elements are missing.");
 }
@@ -108,7 +119,16 @@ groupTabs.forEach((tab) => {
 
     tab.classList.add("active");
     tab.setAttribute("aria-selected", "true");
+    selectedGroup = tab.textContent.trim();
   });
+});
+
+addUserGroupButton.addEventListener("click", () => {
+  updateUserGroup("add-user-group");
+});
+
+deleteUserGroupButton.addEventListener("click", () => {
+  updateUserGroup("delete-user-group");
 });
 
 // =============================================================================
@@ -162,6 +182,20 @@ function sendMessage() {
   isTyping = false;
 }
 
+function updateUserGroup(eventName) {
+  const username = groupAccountInput.value.trim();
+
+  if (!username) {
+    groupUpdateMessage.textContent = "Enter a username first.";
+    return;
+  }
+
+  socket.emit(eventName, {
+    username,
+    group: selectedGroup
+  });
+}
+
 // =============================================================================
 // Use-Case-02: Receive Message
 // =============================================================================
@@ -198,6 +232,10 @@ function displayMessage(data) {
 
 // AC-02.3: display join and leave events separately from chat messages.
 socket.on("status", displayStatus);
+
+socket.on("group-update-status", (message) => {
+  groupUpdateMessage.textContent = message;
+});
 
 function displayStatus(data) {
   const statusMessageElement = document.createElement("div");

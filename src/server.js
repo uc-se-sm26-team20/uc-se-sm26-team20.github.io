@@ -22,6 +22,12 @@ const PORT = process.env.PORT || 8080;
 const userlist = new Map();
 
 const typingUsers = new Set();
+const userGroups = new Map();
+const availableGroups = [
+  "Neighborhood",
+  "Local Government",
+  "Events"
+];
 
 // =============================================================================
 // Lecture 11: Content Security Policy
@@ -65,6 +71,10 @@ io.on("connection", (socket) => {
     const name = chosenUsername.trim();
     userlist.set(socket.id, name);
 
+    if (!userGroups.has(name)) {
+      userGroups.set(name, new Set());
+    }
+
     console.log(
       "New client connected - socket ID: " +
         socket.id +
@@ -95,6 +105,14 @@ io.on("connection", (socket) => {
     typingUsers.delete(username);
 
     io.emit("typingUsers", Array.from(typingUsers));
+  });
+
+  socket.on("add-user-group", (data) => {
+    updateUserGroup(socket, data, "add");
+  });
+
+  socket.on("delete-user-group", (data) => {
+    updateUserGroup(socket, data, "delete");
   });
 
   // ===========================================================================
@@ -178,3 +196,38 @@ server.listen(PORT, () => {
     "Team 20 Messenger server running on port " + PORT
   );
 });
+
+function updateUserGroup(socket, data, action) {
+  if (
+    !data ||
+    typeof data.username !== "string" ||
+    typeof data.group !== "string"
+  ) {
+    return;
+  }
+
+  const username = data.username.trim();
+  const group = data.group.trim();
+
+  if (!username || !availableGroups.includes(group)) {
+    return;
+  }
+
+  const groups = userGroups.get(username) || new Set();
+
+  if (action === "add") {
+    groups.add(group);
+  }
+  else {
+    groups.delete(group);
+  }
+
+  userGroups.set(username, groups);
+
+  socket.emit(
+    "group-update-status",
+    username +
+      " groups: " +
+      (Array.from(groups).join(", ") || "none")
+  );
+}
