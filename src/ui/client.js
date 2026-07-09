@@ -32,10 +32,12 @@ const deleteUserGroupButton = document.getElementById(
 );
 const groupUpdateMessage = document.getElementById("group-update-message");
 const myGroupsElement = document.getElementById("my-groups");
+const onlineUsersCountElement = document.getElementById("online-users-count");
+const onlineUsersListElement = document.getElementById("online-users-list");
 
 const typingIndicator = document.getElementById("typing-indicator");
 let typingTimer;
-let isTyping = false;//Typing indicator defined
+let isTyping = false;
 let selectedGroup = "";
 
 if (
@@ -54,7 +56,9 @@ if (
   !addUserGroupButton ||
   !deleteUserGroupButton ||
   !groupUpdateMessage ||
-  !myGroupsElement
+  !myGroupsElement ||
+  !onlineUsersCountElement ||
+  !onlineUsersListElement
 ) {
   throw new Error("One or more required messenger UI elements are missing.");
 }
@@ -115,7 +119,7 @@ chatMessageInput.addEventListener(
       socket.emit("stopTyping");
     }, 1000);
   }
-);//Event listener for if a user is typing
+);
 
 groupTabsContainer.addEventListener("click", (event) => {
   const tab = event.target.closest(".group-tab");
@@ -262,6 +266,31 @@ function selectGroup(group) {
     const isSelected = tab.textContent.trim() === selectedGroup;
     tab.classList.toggle("active", isSelected);
     tab.setAttribute("aria-selected", String(isSelected));
+  });
+}
+
+// =============================================================================
+// Online users display
+// =============================================================================
+
+socket.on("connected-users", renderConnectedUsers);
+
+function renderConnectedUsers(users) {
+  if (!Array.isArray(users)) {
+    return;
+  }
+
+  onlineUsersCountElement.textContent =
+    users.length === 1
+      ? "1 user online"
+      : users.length + " users online";
+
+  onlineUsersListElement.innerHTML = "";
+
+  users.forEach((username) => {
+    const userElement = document.createElement("li");
+    userElement.textContent = String(username);
+    onlineUsersListElement.appendChild(userElement);
   });
 }
 
