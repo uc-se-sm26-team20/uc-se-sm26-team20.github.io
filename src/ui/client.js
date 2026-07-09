@@ -29,6 +29,7 @@ const deleteUserGroupButton = document.getElementById(
   "delete-user-group-button"
 );
 const groupUpdateMessage = document.getElementById("group-update-message");
+const myGroupsElement = document.getElementById("my-groups");
 
 const typingIndicator = document.getElementById("typing-indicator");
 let typingTimer;
@@ -47,7 +48,8 @@ if (
   !groupAccountInput ||
   !addUserGroupButton ||
   !deleteUserGroupButton ||
-  !groupUpdateMessage
+  !groupUpdateMessage ||
+  !myGroupsElement
 ) {
   throw new Error("One or more required messenger UI elements are missing.");
 }
@@ -235,6 +237,15 @@ socket.on("status", displayStatus);
 
 socket.on("group-update-status", (message) => {
   groupUpdateMessage.textContent = message;
+});
+
+socket.on("user-groups", (groups) => {
+  if (!Array.isArray(groups) || groups.length === 0) {
+    myGroupsElement.textContent = "My group chats: none";
+    return;
+  }
+
+  myGroupsElement.textContent = "My group chats: " + groups.join(", ");
 });
 
 function displayStatus(data) {

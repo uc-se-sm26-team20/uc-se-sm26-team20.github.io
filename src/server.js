@@ -91,6 +91,11 @@ io.on("connection", (socket) => {
       "status",
       name + " joined the chat. Active users: " + userlist.size
     );
+
+    socket.emit(
+      "user-groups",
+      Array.from(userGroups.get(name))
+    );
   });
 
   socket.on("typing", () => {
@@ -230,4 +235,16 @@ function updateUserGroup(socket, data, action) {
       " groups: " +
       (Array.from(groups).join(", ") || "none")
   );
+
+  sendUserGroups(username);
+}
+
+function sendUserGroups(username) {
+  const groups = Array.from(userGroups.get(username) || []);
+
+  userlist.forEach((connectedUsername, socketId) => {
+    if (connectedUsername === username) {
+      io.to(socketId).emit("user-groups", groups);
+    }
+  });
 }
