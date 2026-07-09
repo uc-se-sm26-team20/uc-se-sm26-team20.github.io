@@ -16,7 +16,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 8092;
 
 // In-memory collection that maps each Socket.IO ID to a username.
 const userlist = new Map();
@@ -168,9 +168,48 @@ io.on("connection", (socket) => {
     );
   });
 
+
+  socket.on("private-message", (data) => {
+    if (!data || typeof data !== "object") {
+      return;
+    }
+
+    const recipientSocketId = data.recipientSocketId;
+    const message = String(data.message || "").trim();
+
+    if (!recipientSocketId || !message) {
+      return;
+    }
+
+    const sender = userlist.get(socket.id) || "Unknown user";
+    const recipient = userlist.get(recipientSocketId);
+
+    if (!recipient) {
+      socket.emit("private-message", {
+        from: "System",
+        to: sender,
+        message: "That user is no longer online."
+      });
+      return;
+    }
+
+    const privateMessage = {
+      from: sender,
+      to: recipient,
+      message: message
+    };
+
+    socket.emit("private-message", privateMessage);
+    io.to(recipientSocketId).emit("private-message", privateMessage);
+  });
+
+
   // ===========================================================================
   // Use-Case-02: Disconnect notification
   // ===========================================================================
+
+
+
 
   socket.on("disconnect", () => {
     const disconnectedUsername = userlist.get(socket.id);

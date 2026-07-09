@@ -18,6 +18,10 @@ const sendButtonElement = document.getElementById("send-button");
 const chatMessageInput = document.getElementById("chat-message");
 const responsesElement = document.getElementById("responses");
 const statusElement = document.getElementById("status");
+const privateResponsesElement = document.getElementById("private-responses");
+const privateChatInput = document.getElementById("private-chat-message");
+const privateSendButton = document.getElementById("private-send-button");
+const privateUserSelect = document.getElementById("private-user-select");
 const loginScreen = document.getElementById("login-screen");
 const mainChat = document.getElementById("main-chat");
 const joinButton = document.getElementById("join-button");
@@ -45,6 +49,10 @@ if (
   !chatMessageInput ||
   !responsesElement ||
   !statusElement ||
+  !privateResponsesElement ||
+  !privateChatInput ||
+  !privateSendButton ||
+  !privateUserSelect ||
   !loginScreen ||
   !mainChat ||
   !joinButton ||
@@ -176,6 +184,19 @@ function joinChat() {
   // Set focus to the message input for immediate typing.
   chatMessageInput.focus();
 }
+
+// =============================================================================
+// Private chat input events
+// =============================================================================
+
+privateSendButton.addEventListener("click", sendPrivateMessage);
+
+privateChatInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    sendPrivateMessage();
+  }
+});
 
 // =============================================================================
 // Use-Case-01: Send Message
@@ -366,6 +387,76 @@ function displayStatus(data) {
 
   // AC-02.4: keep the newest status event visible.
   statusElement.scrollTop = statusElement.scrollHeight;
+}
+// =============================================================================
+// Use-Case-03: Private Messages
+// =============================================================================
+
+function sendPrivateMessage() {
+  const recipientSocketId = privateUserSelect.value;
+  const message = privateChatInput.value.trim();
+
+  if (!recipientSocketId || !message) {
+    return;
+  }
+
+  socket.emit("private-message", {
+    recipientSocketId,
+    message
+  });
+
+  privateChatInput.value = "";
+  privateChatInput.focus();
+}// =============================================================================
+// Receive Online User List
+// =============================================================================
+
+socket.on("online-users", (users) => {
+  privateUserSelect.innerHTML =
+    '<option value="">Select a user</option>';
+
+  users.forEach((user) => {
+    if (user.socketId === socket.id) {
+      return;
+    }
+
+    const option = document.createElement("option");
+    option.value = user.socketId;
+    option.textContent = user.username;
+
+    privateUserSelect.appendChild(option);
+  });
+});
+
+
+// =============================================================================
+// Receive Private Messages
+// =============================================================================
+
+socket.on("private-message", displayPrivateMessage);
+
+function displayPrivateMessage(data) {
+  const messageElement = document.createElement("div");
+  const timestamp = new Date().toLocaleTimeString();
+
+  const from = DOMPurify.sanitize(String(data.from));
+  const to = DOMPurify.sanitize(String(data.to));
+  const message = DOMPurify.sanitize(String(data.message));
+
+  messageElement.innerHTML =
+    '<span class="message-time">[' +
+    timestamp +
+    ']</span> <strong>Private</strong> ' +
+    from +
+    ' → ' +
+    to +
+    ': ' +
+    message;
+
+  privateResponsesElement.appendChild(messageElement);
+
+  privateResponsesElement.scrollTop =
+    privateResponsesElement.scrollHeight;
 }
 
 socket.on("typingUsers", (users) => {

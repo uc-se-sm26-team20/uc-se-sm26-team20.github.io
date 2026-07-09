@@ -218,6 +218,24 @@
       color: #168216;
       font-weight: bold;
     }
+    .private-panel {
+  padding: 15px;
+  border: 3px solid #6a1b9a;
+  border-radius: 10px;
+  background-color: #faf2ff;
+  margin-bottom: 25px;
+}
+
+.panel-description {
+  font-size: 14px;
+  margin-top: -5px;
+}
+
+#private-user-select {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+}
 
     .online-users-box {
       min-height: 150px;
@@ -293,6 +311,51 @@
       My group chats: none
     </div>
 
+  <h2>Public Chat</h2>
+
+  <div
+    id="responses"
+    class="message-area"
+    aria-live="polite"
+
+  ></div>
+  <h2>Private Chat</h2>
+
+<div class="private-panel">
+  <p class="panel-description">
+    Private messages are only sent to the selected online user.
+  </p>
+
+  <label for="private-user-select">Send to:</label>
+
+  <select id="private-user-select">
+    <option value="">Select an online user</option>
+  </select>
+
+  <div
+    id="private-responses"
+    class="message-area"
+    aria-live="polite"
+  ></div>
+
+  <div class="message-controls">
+    <input
+      id="private-chat-message"
+      type="text"
+      maxlength="500"
+      autocomplete="off"
+      placeholder="Type a private message..."
+      aria-label="Private chat message"
+    >
+
+    <button
+      id="private-send-button"
+      type="button"
+    >
+      Send Private
+    </button>
+  </div>
+</div>
     <div class="chat-layout">
       <div class="chat-column">
         <div class="panel group-management">
