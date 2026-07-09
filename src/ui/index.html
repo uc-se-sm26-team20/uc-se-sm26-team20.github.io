@@ -34,6 +34,26 @@
       margin-bottom: 25px;
     }
 
+    .group-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .group-tab {
+      padding: 10px 14px;
+      border: 1px solid #ccc;
+      border-bottom: none;
+      background-color: #f5f5f5;
+      cursor: pointer;
+    }
+
+    .group-tab.active {
+      background-color: #ffffff;
+      font-weight: bold;
+    }
+
     #chat-message {
       flex: 1;
       min-width: 0;
@@ -124,6 +144,39 @@
   </div>
 
   <div id="main-chat" class="hidden">
+    <div
+      class="group-tabs"
+      role="tablist"
+      aria-label="User groups"
+    >
+      <button
+        class="group-tab active"
+        type="button"
+        role="tab"
+        aria-selected="true"
+      >
+        Neighborhood
+      </button>
+
+      <button
+        class="group-tab"
+        type="button"
+        role="tab"
+        aria-selected="false"
+      >
+        Local Government
+      </button>
+
+      <button
+        class="group-tab"
+        type="button"
+        role="tab"
+        aria-selected="false"
+      >
+        Events
+      </button>
+    </div>
+
     <div class="message-controls">
       <input
         id="chat-message"

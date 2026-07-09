@@ -22,6 +22,7 @@ const loginScreen = document.getElementById("login-screen");
 const mainChat = document.getElementById("main-chat");
 const joinButton = document.getElementById("join-button");
 const usernameInput = document.getElementById("username");
+const groupTabs = document.querySelectorAll(".group-tab");
 
 const typingIndicator = document.getElementById("typing-indicator");
 let typingTimer;
@@ -97,6 +98,18 @@ chatMessageInput.addEventListener(
     }, 1000);
   }
 );//Event listener for if a user is typing
+
+groupTabs.forEach((tab) => {
+  tab.addEventListener("click", () => {
+    groupTabs.forEach((groupTab) => {
+      groupTab.classList.remove("active");
+      groupTab.setAttribute("aria-selected", "false");
+    });
+
+    tab.classList.add("active");
+    tab.setAttribute("aria-selected", "true");
+  });
+});
 
 // =============================================================================
 // Use-Case: Join Chat
