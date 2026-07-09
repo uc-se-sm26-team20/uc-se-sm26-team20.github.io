@@ -140,7 +140,8 @@
       margin-bottom: 12px;
     }
 
-    #chat-message {
+    #chat-message,
+    #private-chat-message {
       flex: 1;
       min-width: 0;
       padding: 12px;
@@ -149,7 +150,8 @@
       border-radius: 8px;
     }
 
-    #send-button {
+    #send-button,
+    #private-send-button {
       padding: 12px 22px;
       font-size: 16px;
       border: none;
@@ -159,7 +161,8 @@
       cursor: pointer;
     }
 
-    #send-button:hover {
+    #send-button:hover,
+    #private-send-button:hover {
       background-color: #1d27b8;
     }
 
@@ -180,7 +183,8 @@
       background-color: #f8f9fb;
     }
 
-    #responses {
+    #responses,
+    #private-responses {
       height: 420px;
     }
 
@@ -189,7 +193,8 @@
       background-color: #f8f9fb;
     }
 
-    #responses > div {
+    #responses > div,
+    #private-responses > div {
       max-width: 92%;
       margin-bottom: 10px;
       padding: 10px 12px;
@@ -301,24 +306,44 @@
     <div
       class="group-tabs"
       role="tablist"
-      aria-label="User groups"
+      aria-label="Chat channels"
     ></div>
 
     <div
       id="my-groups"
       aria-live="polite"
     >
-      My group chats: none
+      My private group chats: none
     </div>
 
   <h2>Public Chat</h2>
+
+  <div class="message-controls">
+    <input
+      id="chat-message"
+      type="text"
+      maxlength="500"
+      autocomplete="off"
+      placeholder="Type a public message..."
+      aria-label="Public chat message"
+    >
+
+    <button
+      id="send-button"
+      type="button"
+    >
+      Send
+    </button>
+  </div>
+
+  <div id="typing-indicator"></div>
 
   <div
     id="responses"
     class="message-area"
     aria-live="polite"
-
   ></div>
+
   <h2>Private Chat</h2>
 
 <div class="private-panel">
@@ -408,35 +433,6 @@
           ></div>
         </div>
 
-        <div class="panel">
-          <h2>Chat Responses</h2>
-
-          <div class="message-controls">
-            <input
-              id="chat-message"
-              type="text"
-              maxlength="500"
-              autocomplete="off"
-              placeholder="Type a message..."
-              aria-label="Chat message"
-            >
-
-            <button
-              id="send-button"
-              type="button"
-            >
-              Send
-            </button>
-          </div>
-
-          <div id="typing-indicator"></div>
-
-          <div
-            id="responses"
-            class="message-area"
-            aria-live="polite"
-          ></div>
-        </div>
       </div>
 
       <div class="side-column">

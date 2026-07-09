@@ -39,6 +39,7 @@ const myGroupsElement = document.getElementById("my-groups");
 const onlineUsersCountElement = document.getElementById("online-users-count");
 const onlineUsersListElement = document.getElementById("online-users-list");
 
+const PUBLIC_CHAT_LABEL = "Public Chat";
 const typingIndicator = document.getElementById("typing-indicator");
 let typingTimer;
 let isTyping = false;
@@ -136,7 +137,7 @@ groupTabsContainer.addEventListener("click", (event) => {
     return;
   }
 
-  selectGroup(tab.textContent.trim());
+  selectGroup(tab.dataset.group || "");
 });
 
 createGroupButton.addEventListener("click", () => {
@@ -210,18 +211,18 @@ function sendMessage() {
     return;
   }
 
-  if (!selectedGroup) {
-    groupUpdateMessage.textContent = "Select a group chat first.";
-    return;
-  }
-
   console.log(`Debug> Chat message: ${message}`);
 
-  // AC-01.3: send the message to the selected group.
-  socket.emit("message", {
-    group: selectedGroup,
-    message
-  });
+  if (selectedGroup) {
+    // AC-01.3: send the message to the selected group.
+    socket.emit("message", {
+      group: selectedGroup,
+      message
+    });
+  }
+  else {
+    socket.emit("message", { message });
+  }
 
   // AC-01.5: clear and refocus the input after sending.
   chatMessageInput.value = "";
@@ -235,7 +236,7 @@ function updateUserGroup(eventName) {
   const username = groupAccountInput.value.trim();
 
   if (!selectedGroup) {
-    groupUpdateMessage.textContent = "Select a group chat first.";
+    groupUpdateMessage.textContent = "Select a private group chat first.";
     return;
   }
 
@@ -255,17 +256,35 @@ function renderGroupTabs(groups) {
     return;
   }
 
-  if (!groups.includes(selectedGroup)) {
-    selectedGroup = groups[0] || "";
+  if (selectedGroup && !groups.includes(selectedGroup)) {
+    selectedGroup = "";
   }
 
   groupTabsContainer.innerHTML = "";
+
+  const publicTab = document.createElement("button");
+  publicTab.className = "group-tab";
+  publicTab.type = "button";
+  publicTab.setAttribute("role", "tab");
+  publicTab.dataset.group = "";
+  publicTab.textContent = PUBLIC_CHAT_LABEL;
+
+  if (!selectedGroup) {
+    publicTab.classList.add("active");
+    publicTab.setAttribute("aria-selected", "true");
+  }
+  else {
+    publicTab.setAttribute("aria-selected", "false");
+  }
+
+  groupTabsContainer.appendChild(publicTab);
 
   groups.forEach((group) => {
     const tab = document.createElement("button");
     tab.className = "group-tab";
     tab.type = "button";
     tab.setAttribute("role", "tab");
+    tab.dataset.group = group;
     tab.textContent = group;
 
     if (group === selectedGroup) {
@@ -284,7 +303,7 @@ function selectGroup(group) {
   selectedGroup = group;
 
   document.querySelectorAll(".group-tab").forEach((tab) => {
-    const isSelected = tab.textContent.trim() === selectedGroup;
+    const isSelected = (tab.dataset.group || "") === selectedGroup;
     tab.classList.toggle("active", isSelected);
     tab.setAttribute("aria-selected", String(isSelected));
   });
@@ -360,11 +379,11 @@ socket.on("user-groups", (groups) => {
   renderGroupTabs(groups);
 
   if (!Array.isArray(groups) || groups.length === 0) {
-    myGroupsElement.textContent = "My group chats: none";
+    myGroupsElement.textContent = "My private group chats: none";
     return;
   }
 
-  myGroupsElement.textContent = "My group chats: " + groups.join(", ");
+  myGroupsElement.textContent = "My private group chats: " + groups.join(", ");
 });
 
 function displayStatus(data) {

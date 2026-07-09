@@ -23,8 +23,8 @@ const userlist = new Map();
 
 const typingUsers = new Set();
 const userGroups = new Map();
-const GLOBAL_GROUP = "Global";
-const availableGroups = [GLOBAL_GROUP];
+const availableGroups = [];
+const reservedGroupNames = new Set(["global", "public chat"]);
 
 // =============================================================================
 // Lecture 11: Content Security Policy
@@ -72,8 +72,6 @@ io.on("connection", (socket) => {
       userGroups.set(name, new Set());
     }
 
-    userGroups.get(name).add(GLOBAL_GROUP);
-
     console.log(
       "New client connected - socket ID: " +
         socket.id +
@@ -85,6 +83,7 @@ io.on("connection", (socket) => {
       "connected-users",
       Array.from(userlist.values())
     );
+    emitOnlineUsers();
 
     io.emit(
       "status",
@@ -131,22 +130,39 @@ io.on("connection", (socket) => {
     // AC-01.2: ignore invalid and empty messages.
     if (
       !data ||
-      typeof data.message !== "string" ||
-      typeof data.group !== "string"
+      typeof data.message !== "string"
     ) {
       return;
     }
 
     const message = data.message.trim();
-    const group = data.group.trim();
+    const group =
+      typeof data.group === "string" ? data.group.trim() : "";
 
-    if (!message || !availableGroups.includes(group)) {
+    if (!message) {
       return;
     }
 
     // AC-01.1 and AC-01.4: identify the sender.
     const sender =
       userlist.get(socket.id) || "Unknown user";
+
+    if (!group) {
+      console.log(
+        'Debug> "' + sender + '" sent to public chat: ' + message
+      );
+
+      io.emit(
+        "message",
+        "[Public] " + sender + " says: " + message
+      );
+      return;
+    }
+
+    if (!availableGroups.includes(group)) {
+      return;
+    }
+
     const senderGroups = userGroups.get(sender) || new Set();
 
     if (!senderGroups.has(group)) {
@@ -230,6 +246,7 @@ io.on("connection", (socket) => {
       "connected-users",
       Array.from(userlist.values())
     );
+    emitOnlineUsers();
 
     console.log(
       "Client disconnected - socket ID: " +
@@ -273,14 +290,6 @@ function updateUserGroup(socket, data, action) {
   const requesterGroups = userGroups.get(requester) || new Set();
 
   if (!username || !availableGroups.includes(group)) {
-    return;
-  }
-
-  if (action === "delete" && group === GLOBAL_GROUP) {
-    socket.emit(
-      "group-update-status",
-      "Users cannot be removed from the Global group."
-    );
     return;
   }
 
@@ -334,6 +343,11 @@ function createGroup(socket, groupName) {
 
   const group = groupName.trim();
 
+  if (reservedGroupNames.has(group.toLowerCase())) {
+    socket.emit("group-update-status", "Choose a different group name.");
+    return;
+  }
+
   if (availableGroups.includes(group)) {
     socket.emit("group-update-status", "Group already exists: " + group);
     return;
@@ -370,4 +384,13 @@ function sendToUser(username, eventName, payload) {
       io.to(socketId).emit(eventName, payload);
     }
   });
+}
+
+function emitOnlineUsers() {
+  const users = Array.from(userlist, ([socketId, username]) => ({
+    socketId,
+    username
+  }));
+
+  io.emit("online-users", users);
 }
