@@ -1,472 +1,1297 @@
 /* =============================================================================
  * EECE/CS 3093C Software Engineering — Team 20 Messenger
- * client.js — code skeleton provided by Dr. Phu Phung
- * Team implementation by EECE/CS 3093C Team 20
+ * client.js — Authentication + Team 20 Messenger Merge
  * =============================================================================
  */
 
 "use strict";
 
-// Connect to the Socket.IO server that served this page.
 const socket = io();
 
-// =============================================================================
-// UI DOM references
-// =============================================================================
-
-const sendButtonElement = document.getElementById("send-button");
-const chatMessageInput = document.getElementById("chat-message");
-const responsesElement = document.getElementById("responses");
-const statusElement = document.getElementById("status");
-const privateResponsesElement = document.getElementById("private-responses");
-const privateChatInput = document.getElementById("private-chat-message");
-const privateSendButton = document.getElementById("private-send-button");
-const privateUserSelect = document.getElementById("private-user-select");
-const loginScreen = document.getElementById("login-screen");
-const mainChat = document.getElementById("main-chat");
-const joinButton = document.getElementById("join-button");
-const usernameInput = document.getElementById("username");
-const groupTabsContainer = document.querySelector(".group-tabs");
-const newGroupInput = document.getElementById("new-group-name");
-const createGroupButton = document.getElementById("create-group-button");
-const groupAccountInput = document.getElementById("group-account-name");
-const addUserGroupButton = document.getElementById("add-user-group-button");
-const deleteUserGroupButton = document.getElementById(
-  "delete-user-group-button"
-);
-const groupUpdateMessage = document.getElementById("group-update-message");
-const myGroupsElement = document.getElementById("my-groups");
-const onlineUsersCountElement = document.getElementById("online-users-count");
-const onlineUsersListElement = document.getElementById("online-users-list");
-
-const typingIndicator = document.getElementById("typing-indicator");
-let typingTimer;
-let isTyping = false;
+let currentUsername = "";
 let selectedGroup = "";
 
-if (
-  !sendButtonElement ||
-  !chatMessageInput ||
-  !responsesElement ||
-  !statusElement ||
-  !privateResponsesElement ||
-  !privateChatInput ||
-  !privateSendButton ||
-  !privateUserSelect ||
-  !loginScreen ||
-  !mainChat ||
-  !joinButton ||
-  !usernameInput ||
-  !groupTabsContainer ||
-  !newGroupInput ||
-  !createGroupButton ||
-  !groupAccountInput ||
-  !addUserGroupButton ||
-  !deleteUserGroupButton ||
-  !groupUpdateMessage ||
-  !myGroupsElement ||
-  !onlineUsersCountElement ||
-  !onlineUsersListElement
-) {
-  throw new Error("One or more required messenger UI elements are missing.");
-}
+let typingTimer = null;
+let isTyping = false;
+
 
 // =============================================================================
-// Socket.IO connection events
+// Socket Connection
 // =============================================================================
 
 socket.on("connect", () => {
   console.log(
-    `Connected to Socket.IO server. Socket ID: ${socket.id}`
+    "Connected to Socket.IO server: " + socket.id
   );
 });
+
 
 socket.on("connect_error", (error) => {
   console.error(
-    `Socket.IO connection failed: ${error.message}`
+    "Socket connection failed:",
+    error.message
   );
 });
 
+
 // =============================================================================
-// User input events
+// DOM References
 // =============================================================================
 
-joinButton.addEventListener("click", joinChat);
 
-// Allow joining by pressing Enter in the username field.
-usernameInput.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    joinChat();
-  }
-});
+// Authentication
 
-// AC-01.1: clicking the Send button submits the current message.
-sendButtonElement.addEventListener("click", sendMessage);
+const loginUI = document.getElementById("loginUI");
+const registerUI = document.getElementById("registerUI");
+const chatUI = document.getElementById("chatUI");
 
-// Pressing Enter also sends the current message.
-chatMessageInput.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    sendMessage();
-  }
-});
+const usernameInput = document.getElementById("username");
+const passwordInput = document.getElementById("password");
 
-chatMessageInput.addEventListener(
-  "input",
+const joinButton = document.getElementById("joinBTN");
+const registerButton = document.getElementById("registerBTN");
+
+const registerUsernameInput =
+  document.getElementById("reg-username");
+
+const registerPasswordInput =
+  document.getElementById("reg-password");
+
+
+const loginError =
+  document.getElementById("login-error");
+
+const registerError =
+  document.getElementById("register-error");
+
+
+const showRegisterButton =
+  document.getElementById("showRegisterBtn");
+
+const showLoginButton =
+  document.getElementById("showLoginBtn");
+
+
+const logoutButton =
+  document.getElementById("logoutBTN");
+
+
+const displayName =
+  document.getElementById("display-name");
+
+
+
+// Public chat
+
+const sendButton =
+  document.getElementById("send-button");
+
+const chatMessageInput =
+  document.getElementById("chat-message");
+
+const responses =
+  document.getElementById("responses");
+
+const status =
+  document.getElementById("status");
+
+const typingIndicator =
+  document.getElementById("typing-indicator");
+
+
+
+// Groups
+
+const groupTabs =
+  document.querySelector(".group-tabs");
+
+const myGroups =
+  document.getElementById("my-groups");
+
+const newGroupName =
+  document.getElementById("new-group-name");
+
+const createGroupButton =
+  document.getElementById("create-group-button");
+
+const groupAccountName =
+  document.getElementById("group-account-name");
+
+const addUserGroupButton =
+  document.getElementById("add-user-group-button");
+
+const deleteUserGroupButton =
+  document.getElementById("delete-user-group-button");
+
+const groupUpdateMessage =
+  document.getElementById("group-update-message");
+
+
+// Private messaging
+
+const privateUserSelect =
+  document.getElementById("private-user-select");
+
+const privateMessageInput =
+  document.getElementById("private-chat-message");
+
+const privateSendButton =
+  document.getElementById("private-send-button");
+
+const privateResponses =
+  document.getElementById("private-responses");
+
+
+// Online users
+
+const onlineUsersCount =
+  document.getElementById("online-users-count");
+
+const onlineUsersList =
+  document.getElementById("online-users-list");
+
+
+// =============================================================================
+// Authentication UI
+// =============================================================================
+
+
+showRegisterButton.addEventListener(
+  "click",
   () => {
-    if (!isTyping) {
-      isTyping = true;
-      socket.emit("typing");
-    }
 
-    clearTimeout(typingTimer);
+    loginUI.classList.add("hidden");
+    registerUI.classList.remove("hidden");
 
-    typingTimer = setTimeout(() => {
-      isTyping = false;
-      socket.emit("stopTyping");
-    }, 1000);
+    loginError.textContent = "";
+
   }
 );
 
-groupTabsContainer.addEventListener("click", (event) => {
-  const tab = event.target.closest(".group-tab");
 
-  if (!tab) {
-    return;
+
+showLoginButton.addEventListener(
+  "click",
+  () => {
+
+    registerUI.classList.add("hidden");
+    loginUI.classList.remove("hidden");
+
+    registerError.textContent = "";
+
   }
+);
 
-  selectGroup(tab.textContent.trim());
-});
 
-createGroupButton.addEventListener("click", () => {
-  const groupName = newGroupInput.value.trim();
-
-  if (!groupName) {
-    groupUpdateMessage.textContent = "Enter a group name first.";
-    return;
-  }
-
-  socket.emit("create-group", groupName);
-  newGroupInput.value = "";
-});
-
-addUserGroupButton.addEventListener("click", () => {
-  updateUserGroup("add-user-group");
-});
-
-deleteUserGroupButton.addEventListener("click", () => {
-  updateUserGroup("delete-user-group");
-});
 
 // =============================================================================
-// Use-Case: Join Chat
+// Login
 // =============================================================================
 
-function joinChat() {
-  const username = usernameInput.value.trim();
 
-  // Basic validation for the username.
-  if (!username) {
-    alert("Please enter a username to join the chat.");
+joinButton.addEventListener(
+  "click",
+  login
+);
+
+
+
+passwordInput.addEventListener(
+  "keydown",
+  (event)=>{
+
+    if(event.key === "Enter"){
+      login();
+    }
+
+  }
+);
+
+
+
+function login(){
+
+  const username =
+    usernameInput.value.trim();
+
+  const password =
+    passwordInput.value;
+
+
+  const usernamePattern =
+    /^\w{3,20}$/;
+
+
+  const passwordPattern =
+    /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
+
+
+
+  if(!usernamePattern.test(username)){
+
+    loginError.textContent =
+      "Username must be 3-20 characters.";
+
     return;
   }
 
-  console.log(`Debug> User joining as: ${username}`);
 
-  // Switch views by toggling the "hidden" class defined in CSS.
-  loginScreen.classList.add("hidden");
-  mainChat.classList.remove("hidden");
 
-  // Inform the server about the new user.
-  socket.emit("join", username);
+  if(!passwordPattern.test(password)){
 
-  // Set focus to the message input for immediate typing.
-  chatMessageInput.focus();
+    loginError.textContent =
+      "Password must be at least 6 characters and contain letters and numbers.";
+
+    return;
+  }
+
+
+
+  loginError.textContent = "";
+
+
+  socket.emit(
+    "join",
+    {
+      username,
+      password
+    }
+  );
+
 }
 
-// =============================================================================
-// Private chat input events
-// =============================================================================
 
-privateSendButton.addEventListener("click", sendPrivateMessage);
 
-privateChatInput.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    sendPrivateMessage();
+// Successful login
+
+socket.on(
+  "join-success",
+  (username)=>{
+
+    currentUsername = username;
+
+
+    loginUI.classList.add("hidden");
+
+    registerUI.classList.add("hidden");
+
+    chatUI.classList.remove("hidden");
+
+
+    displayName.textContent =
+      username;
+
+
+    chatMessageInput.focus();
+
   }
-});
+);
+
+
+
+// Failed login
+
+socket.on(
+  "join-error",
+  (message)=>{
+
+    loginError.textContent =
+      message;
+
+  }
+);
+
+
 
 // =============================================================================
-// Use-Case-01: Send Message
+// Registration
 // =============================================================================
 
-function sendMessage() {
-  const message = chatMessageInput.value.trim();
 
-  // AC-01.2: empty messages are ignored.
-  if (!message) {
+registerButton.addEventListener(
+  "click",
+  registerAccount
+);
+
+
+
+function registerAccount(){
+
+  const username =
+    registerUsernameInput.value.trim();
+
+
+  const password =
+    registerPasswordInput.value;
+
+
+
+  const usernamePattern =
+    /^\w{3,20}$/;
+
+
+  const passwordPattern =
+    /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
+
+
+
+  if(!usernamePattern.test(username)){
+
+    registerError.textContent =
+      "Username must be 3-20 characters.";
+
     return;
   }
 
-  if (!selectedGroup) {
-    groupUpdateMessage.textContent = "Select a group chat first.";
+
+
+  if(!passwordPattern.test(password)){
+
+    registerError.textContent =
+      "Password must contain letters and numbers.";
+
     return;
   }
 
-  console.log(`Debug> Chat message: ${message}`);
 
-  // AC-01.3: send the message to the selected group.
-  socket.emit("message", {
-    group: selectedGroup,
-    message
-  });
 
-  // AC-01.5: clear and refocus the input after sending.
+  registerError.textContent = "";
+
+
+  socket.emit(
+    "register",
+    {
+      username,
+      password
+    }
+  );
+
+}
+
+
+
+socket.on(
+  "register-success",
+  (username)=>{
+
+    registerUI.classList.add("hidden");
+
+    loginUI.classList.remove("hidden");
+
+
+    loginError.textContent =
+      "Account '" +
+      username +
+      "' created. You may log in.";
+
+  }
+);
+
+
+
+socket.on(
+  "register-error",
+  (message)=>{
+
+    registerError.textContent =
+      message;
+
+  }
+);
+
+
+
+// =============================================================================
+// Logout
+// =============================================================================
+
+
+logoutButton.addEventListener(
+  "click",
+  ()=>{
+
+    socket.emit("leave-chat");
+
+  }
+);
+
+
+
+socket.on(
+  "leave-success",
+  ()=>{
+
+    currentUsername = "";
+
+    chatUI.classList.add("hidden");
+
+    loginUI.classList.remove("hidden");
+
+
+    usernameInput.value = "";
+
+    passwordInput.value = "";
+
+
+    responses.innerHTML = "";
+
+    privateResponses.innerHTML = "";
+
+    status.innerHTML = "";
+
+
+  }
+);
+// =============================================================================
+// Public Chat
+// =============================================================================
+
+
+sendButton.addEventListener(
+  "click",
+  sendMessage
+);
+
+
+
+chatMessageInput.addEventListener(
+  "keydown",
+  (event)=>{
+
+    if(event.key === "Enter"){
+
+      event.preventDefault();
+
+      sendMessage();
+
+    }
+
+  }
+);
+
+
+
+chatMessageInput.addEventListener(
+  "input",
+  ()=>{
+
+    if(!isTyping){
+
+      isTyping = true;
+
+      socket.emit("typing");
+
+    }
+
+
+    clearTimeout(typingTimer);
+
+
+    typingTimer =
+      setTimeout(()=>{
+
+        isTyping = false;
+
+        socket.emit("stopTyping");
+
+
+      },1000);
+
+
+  }
+);
+
+
+
+function sendMessage(){
+
+  const message =
+    chatMessageInput.value.trim();
+
+
+
+  if(!message){
+
+    return;
+
+  }
+
+
+
+  if(!selectedGroup){
+
+    groupUpdateMessage.textContent =
+      "Select a group first.";
+
+    return;
+
+  }
+
+
+
+  socket.emit(
+    "message",
+    {
+      group:selectedGroup,
+      message
+    }
+  );
+
+
+
   chatMessageInput.value = "";
+
   chatMessageInput.focus();
+
+
+  isTyping = false;
 
   socket.emit("stopTyping");
-  isTyping = false;
+
 }
 
-function updateUserGroup(eventName) {
-  const username = groupAccountInput.value.trim();
 
-  if (!selectedGroup) {
-    groupUpdateMessage.textContent = "Select a group chat first.";
-    return;
-  }
-
-  if (!username) {
-    groupUpdateMessage.textContent = "Enter a username first.";
-    return;
-  }
-
-  socket.emit(eventName, {
-    username,
-    group: selectedGroup
-  });
-}
-
-function renderGroupTabs(groups) {
-  if (!Array.isArray(groups)) {
-    return;
-  }
-
-  if (!groups.includes(selectedGroup)) {
-    selectedGroup = groups[0] || "";
-  }
-
-  groupTabsContainer.innerHTML = "";
-
-  groups.forEach((group) => {
-    const tab = document.createElement("button");
-    tab.className = "group-tab";
-    tab.type = "button";
-    tab.setAttribute("role", "tab");
-    tab.textContent = group;
-
-    if (group === selectedGroup) {
-      tab.classList.add("active");
-      tab.setAttribute("aria-selected", "true");
-    }
-    else {
-      tab.setAttribute("aria-selected", "false");
-    }
-
-    groupTabsContainer.appendChild(tab);
-  });
-}
-
-function selectGroup(group) {
-  selectedGroup = group;
-
-  document.querySelectorAll(".group-tab").forEach((tab) => {
-    const isSelected = tab.textContent.trim() === selectedGroup;
-    tab.classList.toggle("active", isSelected);
-    tab.setAttribute("aria-selected", String(isSelected));
-  });
-}
 
 // =============================================================================
-// Online users display
+// Receive Public Messages
 // =============================================================================
 
-socket.on("connected-users", renderConnectedUsers);
 
-function renderConnectedUsers(users) {
-  if (!Array.isArray(users)) {
-    return;
-  }
+socket.on(
+  "message",
+  displayMessage
+);
 
-  onlineUsersCountElement.textContent =
-    users.length === 1
-      ? "1 user online"
-      : users.length + " users online";
 
-  onlineUsersListElement.innerHTML = "";
 
-  users.forEach((username) => {
-    const userElement = document.createElement("li");
-    userElement.textContent = String(username);
-    onlineUsersListElement.appendChild(userElement);
-  });
-}
+function displayMessage(data){
 
-// =============================================================================
-// Use-Case-02: Receive Message
-// =============================================================================
+  const element =
+    document.createElement("div");
 
-// AC-02.1: display incoming messages without refreshing the page.
-socket.on("message", displayMessage);
 
-function displayMessage(data) {
-  const messageElement = document.createElement("div");
-  const timestamp = new Date().toLocaleTimeString();
+  const timestamp =
+    new Date().toLocaleTimeString();
 
-  /*
-   * AC-02.5:
-   * Sanitize incoming content before inserting it into the page.
-   * This prevents injected HTML or JavaScript from executing.
-   */
-  const sanitizedMessage = DOMPurify.sanitize(String(data));
 
-  messageElement.innerHTML =
+
+  const safeMessage =
+    DOMPurify.sanitize(
+      String(data)
+    );
+
+
+
+  element.innerHTML =
     '<span class="message-time">[' +
     timestamp +
-    "]</span> " +
-    sanitizedMessage;
+    ']</span> ' +
+    safeMessage;
 
-  responsesElement.appendChild(messageElement);
 
-  // AC-02.4: keep the newest message visible.
-  responsesElement.scrollTop = responsesElement.scrollHeight;
+
+  responses.appendChild(element);
+
+
+  responses.scrollTop =
+    responses.scrollHeight;
+
 }
 
+
+
 // =============================================================================
-// System status events
-// =============================================================================
-
-// AC-02.3: display join and leave events separately from chat messages.
-socket.on("status", displayStatus);
-
-socket.on("group-update-status", (message) => {
-  groupUpdateMessage.textContent = message;
-});
-
-socket.on("user-groups", (groups) => {
-  renderGroupTabs(groups);
-
-  if (!Array.isArray(groups) || groups.length === 0) {
-    myGroupsElement.textContent = "My group chats: none";
-    return;
-  }
-
-  myGroupsElement.textContent = "My group chats: " + groups.join(", ");
-});
-
-function displayStatus(data) {
-  const statusMessageElement = document.createElement("div");
-  const timestamp = new Date().toLocaleTimeString();
-
-  /*
-   * AC-02.5:
-   * Sanitize system-status content before inserting it into the page.
-   */
-  const sanitizedStatus = DOMPurify.sanitize(String(data));
-
-  statusMessageElement.innerHTML =
-    '<span class="status-time">[' +
-    timestamp +
-    "]</span> " +
-    sanitizedStatus;
-
-  statusElement.appendChild(statusMessageElement);
-
-  // AC-02.4: keep the newest status event visible.
-  statusElement.scrollTop = statusElement.scrollHeight;
-}
-// =============================================================================
-// Use-Case-03: Private Messages
+// Group Tabs
 // =============================================================================
 
-function sendPrivateMessage() {
-  const recipientSocketId = privateUserSelect.value;
-  const message = privateChatInput.value.trim();
 
-  if (!recipientSocketId || !message) {
-    return;
-  }
+groupTabs.addEventListener(
+  "click",
+  (event)=>{
 
-  socket.emit("private-message", {
-    recipientSocketId,
-    message
-  });
 
-  privateChatInput.value = "";
-  privateChatInput.focus();
-}// =============================================================================
-// Receive Online User List
-// =============================================================================
+    const tab =
+      event.target.closest(".group-tab");
 
-socket.on("online-users", (users) => {
-  privateUserSelect.innerHTML =
-    '<option value="">Select a user</option>';
 
-  users.forEach((user) => {
-    if (user.socketId === socket.id) {
+    if(!tab){
+
       return;
+
     }
 
-    const option = document.createElement("option");
-    option.value = user.socketId;
-    option.textContent = user.username;
 
-    privateUserSelect.appendChild(option);
-  });
-});
+    selectGroup(
+      tab.textContent.trim()
+    );
+
+
+  }
+);
+
+
+
+function renderGroupTabs(groups){
+
+  if(!Array.isArray(groups)){
+
+    return;
+
+  }
+
+
+
+  if(!groups.includes(selectedGroup)){
+
+    selectedGroup =
+      groups[0] || "";
+
+  }
+
+
+
+  groupTabs.innerHTML = "";
+
+
+
+  groups.forEach(
+    (group)=>{
+
+
+      const button =
+        document.createElement("button");
+
+
+      button.type =
+        "button";
+
+
+      button.className =
+        "group-tab";
+
+
+      button.textContent =
+        group;
+
+
+
+      if(group === selectedGroup){
+
+        button.classList.add(
+          "active"
+        );
+
+      }
+
+
+
+      groupTabs.appendChild(button);
+
+
+    }
+  );
+
+}
+
+
+
+function selectGroup(group){
+
+  selectedGroup = group;
+
+
+
+  document
+    .querySelectorAll(".group-tab")
+    .forEach(
+      (tab)=>{
+
+        tab.classList.toggle(
+          "active",
+          tab.textContent.trim() === group
+        );
+
+      }
+    );
+
+}
+
+
+
+// =============================================================================
+// Receive User Groups
+// =============================================================================
+
+
+socket.on(
+  "user-groups",
+  (groups)=>{
+
+
+    renderGroupTabs(groups);
+
+
+
+    if(!groups || groups.length === 0){
+
+      myGroups.textContent =
+        "My group chats: none";
+
+      return;
+
+    }
+
+
+
+    myGroups.textContent =
+      "My group chats: " +
+      groups.join(", ");
+
+
+  }
+);
+
+
+
+// =============================================================================
+// Group Management
+// =============================================================================
+
+
+createGroupButton.addEventListener(
+  "click",
+  ()=>{
+
+
+    const group =
+      newGroupName.value.trim();
+
+
+
+    if(!group){
+
+      groupUpdateMessage.textContent =
+        "Enter a group name.";
+
+      return;
+
+    }
+
+
+
+    socket.emit(
+      "create-group",
+      group
+    );
+
+
+    newGroupName.value = "";
+
+
+  }
+);
+
+
+
+addUserGroupButton.addEventListener(
+  "click",
+  ()=>{
+
+    updateUserGroup(
+      "add-user-group"
+    );
+
+  }
+);
+
+
+
+deleteUserGroupButton.addEventListener(
+  "click",
+  ()=>{
+
+    updateUserGroup(
+      "delete-user-group"
+    );
+
+  }
+);
+
+
+
+function updateUserGroup(eventName){
+
+
+  const username =
+    groupAccountName.value.trim();
+
+
+
+  if(!selectedGroup){
+
+    groupUpdateMessage.textContent =
+      "Select a group first.";
+
+    return;
+
+  }
+
+
+
+  if(!username){
+
+    groupUpdateMessage.textContent =
+      "Enter a username.";
+
+    return;
+
+  }
+
+
+
+  socket.emit(
+    eventName,
+    {
+      username,
+      group:selectedGroup
+    }
+  );
+
+}
+
+
+
+socket.on(
+  "group-update-status",
+  (message)=>{
+
+    groupUpdateMessage.textContent =
+      message;
+
+  }
+);
+
+
+
+// =============================================================================
+// Typing Indicator
+// =============================================================================
+
+
+socket.on(
+  "typingUsers",
+  (users)=>{
+
+
+    if(!Array.isArray(users) ||
+       users.length === 0){
+
+      typingIndicator.textContent =
+        "";
+
+      return;
+
+    }
+
+
+
+    if(users.length === 1){
+
+      typingIndicator.textContent =
+        users[0] +
+        " is typing...";
+
+    }
+    else{
+
+      typingIndicator.textContent =
+        users.join(", ") +
+        " are typing...";
+
+    }
+
+
+  }
+);
+// =============================================================================
+// Private Messaging
+// =============================================================================
+
+
+privateSendButton.addEventListener(
+  "click",
+  sendPrivateMessage
+);
+
+
+
+privateMessageInput.addEventListener(
+  "keydown",
+  (event)=>{
+
+    if(event.key === "Enter"){
+
+      event.preventDefault();
+
+      sendPrivateMessage();
+
+    }
+
+  }
+);
+
+
+
+function sendPrivateMessage(){
+
+
+  const recipientSocketId =
+    privateUserSelect.value;
+
+
+  const message =
+    privateMessageInput.value.trim();
+
+
+
+  if(!recipientSocketId || !message){
+
+    return;
+
+  }
+
+
+
+  socket.emit(
+    "private-message",
+    {
+      recipientSocketId,
+      message
+    }
+  );
+
+
+
+  privateMessageInput.value = "";
+
+  privateMessageInput.focus();
+
+
+}
+
 
 
 // =============================================================================
 // Receive Private Messages
 // =============================================================================
 
-socket.on("private-message", displayPrivateMessage);
 
-function displayPrivateMessage(data) {
-  const messageElement = document.createElement("div");
-  const timestamp = new Date().toLocaleTimeString();
+socket.on(
+  "private-message",
+  displayPrivateMessage
+);
 
-  const from = DOMPurify.sanitize(String(data.from));
-  const to = DOMPurify.sanitize(String(data.to));
-  const message = DOMPurify.sanitize(String(data.message));
 
-  messageElement.innerHTML =
+
+function displayPrivateMessage(data){
+
+
+  const element =
+    document.createElement("div");
+
+
+  const timestamp =
+    new Date().toLocaleTimeString();
+
+
+
+  const from =
+    DOMPurify.sanitize(
+      String(data.from || "")
+    );
+
+
+  const to =
+    DOMPurify.sanitize(
+      String(data.to || "")
+    );
+
+
+  const message =
+    DOMPurify.sanitize(
+      String(data.message || "")
+    );
+
+
+
+  element.innerHTML =
     '<span class="message-time">[' +
     timestamp +
-    ']</span> <strong>Private</strong> ' +
+    ']</span> ' +
+    '<strong>Private</strong> ' +
     from +
-    ' → ' +
+    " → " +
     to +
-    ': ' +
+    ": " +
     message;
 
-  privateResponsesElement.appendChild(messageElement);
 
-  privateResponsesElement.scrollTop =
-    privateResponsesElement.scrollHeight;
+
+  privateResponses.appendChild(element);
+
+
+
+  privateResponses.scrollTop =
+    privateResponses.scrollHeight;
+
+
 }
 
-socket.on("typingUsers", (users) => {
-  if (users.length === 0) {
-    typingIndicator.textContent = "";
+
+
+// =============================================================================
+// Online Users
+// =============================================================================
+
+
+socket.on(
+  "online-users",
+  updatePrivateUsers
+);
+
+
+
+function updatePrivateUsers(users){
+
+
+  if(!Array.isArray(users)){
+
+    return;
+
   }
-  else if (users.length === 1) {
-    typingIndicator.textContent = users[0] + " is typing...";
+
+
+
+  privateUserSelect.innerHTML =
+    '<option value="">Select an online user</option>';
+
+
+
+  users.forEach(
+    (user)=>{
+
+
+      if(user.socketId === socket.id){
+
+        return;
+
+      }
+
+
+
+      const option =
+        document.createElement("option");
+
+
+      option.value =
+        user.socketId;
+
+
+      option.textContent =
+        user.username;
+
+
+
+      privateUserSelect.appendChild(option);
+
+
+    }
+  );
+
+}
+
+
+
+// Authentication project compatibility
+socket.on(
+  "user-list",
+  (users)=>{
+
+
+    if(!Array.isArray(users)){
+
+      return;
+
+    }
+
+
+
+    onlineUsersList.innerHTML = "";
+
+
+
+    users.forEach(
+      (username)=>{
+
+
+        const li =
+          document.createElement("li");
+
+
+        li.textContent =
+          username;
+
+
+        onlineUsersList.appendChild(li);
+
+
+      }
+    );
+
+
+
+    onlineUsersCount.textContent =
+      users.length === 1
+        ? "1 user online"
+        : users.length + " users online";
+
+
   }
-  else {
-    typingIndicator.textContent = users.join(", ") + " are typing...";
+);
+
+
+
+// Team 20 compatibility
+socket.on(
+  "connected-users",
+  (users)=>{
+
+
+    if(!Array.isArray(users)){
+
+      return;
+
+    }
+
+
+
+    onlineUsersList.innerHTML = "";
+
+
+
+    users.forEach(
+      (username)=>{
+
+
+        const li =
+          document.createElement("li");
+
+
+        li.textContent =
+          username;
+
+
+        onlineUsersList.appendChild(li);
+
+
+      }
+    );
+
+
+
+    onlineUsersCount.textContent =
+      users.length === 1
+        ? "1 user online"
+        : users.length + " users online";
+
+
   }
-});
+);
+
+
+
+// =============================================================================
+// System Status
+// =============================================================================
+
+
+socket.on(
+  "status",
+  displayStatus
+);
+
+
+
+function displayStatus(data){
+
+
+  const element =
+    document.createElement("div");
+
+
+  const timestamp =
+    new Date().toLocaleTimeString();
+
+
+
+  const safe =
+    DOMPurify.sanitize(
+      String(data)
+    );
+
+
+
+  element.innerHTML =
+    '<span class="status-time">[' +
+    timestamp +
+    ']</span> ' +
+    safe;
+
+
+
+  status.appendChild(element);
+
+
+
+  status.scrollTop =
+    status.scrollHeight;
+
+
+}
+
+
+
+// =============================================================================
+// Authorization Failure
+// =============================================================================
+
+
+socket.on(
+  "not-authorized",
+  ()=>{
+
+
+    status.textContent =
+      "You must login before using the messenger.";
+
+  }
+);
+
+
+
+// =============================================================================
+// Disconnect Handling
+// =============================================================================
+
+
+socket.on(
+  "disconnect",
+  ()=>{
+
+    console.log(
+      "Disconnected from server."
+    );
+
+  }
+);
+
