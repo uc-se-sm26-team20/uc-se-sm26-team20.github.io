@@ -6,7 +6,7 @@
 const { MongoClient } = require('mongodb');
 const bcrypt = require('bcrypt');
 
-const uri = "mongodb+srv://Ethan:Hutchinson311!@messengerdb.6h34tk7.mongodb.net/?appName=MessengerDB"; //replace this with your connection string
+const uri = "mongodb+srv://Admin:Administrator@messenger.odudlov.mongodb.net/?appName=Messenger"; //replace this with your connection string
 const client = new MongoClient(uri);
 
 async function connect (){
@@ -20,7 +20,7 @@ const find = async (username, password)=> {
   let user = null;
   console.log(`Debug>messengerdb.js: find user '${username}'`)
   if (typeof username !== 'string' || typeof password !== 'string') return null;
-  //AC-03.3
+  //AC-03.3 
   user = await users.findOne({username:username});
   if (!user) return null;
   //AC-03.3
