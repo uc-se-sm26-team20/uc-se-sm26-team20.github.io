@@ -10,10 +10,12 @@ const uri = "mongodb+srv://Admin:Administrator@messenger.odudlov.mongodb.net/?ap
 const client = new MongoClient(uri);
 
 let users;
+let messages;
 
 async function connect (){
   await client.connect();
   users = client.db('Messenger').collection('Users');
+  messages = client.db('Messenger').collection('Messages');
   console.log('Debug>messengerdb.js: connected to MongoDB server!');
 }
 
@@ -90,5 +92,45 @@ const updateProfile = async (oldUsername, newUsername, newPassword) => {
   return { success: true, message: 'Profile updated successfully' };
 };
 
+// UC-Chat History: persist and retrieve messages so history survives logout/reconnect
+const saveGroupMessage = async (group, from, message) => {
+  const doc = { kind: 'group', group, from, message, timestamp: new Date() };
+  await messages.insertOne(doc);
+  return doc;
+};
 
-module.exports = { connect, find, register, updateProfile };
+const savePrivateMessage = async (from, to, message) => {
+  const doc = { kind: 'private', from, to, message, timestamp: new Date() };
+  await messages.insertOne(doc);
+  return doc;
+};
+
+const getGroupHistory = async (group, limit = 100) => {
+  const docs = await messages
+    .find({ kind: 'group', group })
+    .sort({ timestamp: -1 })
+    .limit(limit)
+    .toArray();
+  return docs.reverse();
+};
+
+const getPrivateHistory = async (username, limit = 100) => {
+  const docs = await messages
+    .find({ kind: 'private', $or: [{ from: username }, { to: username }] })
+    .sort({ timestamp: -1 })
+    .limit(limit)
+    .toArray();
+  return docs.reverse();
+};
+
+
+module.exports = {
+  connect,
+  find,
+  register,
+  updateProfile,
+  saveGroupMessage,
+  savePrivateMessage,
+  getGroupHistory,
+  getPrivateHistory
+};
