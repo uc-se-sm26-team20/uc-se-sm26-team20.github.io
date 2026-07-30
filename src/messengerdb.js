@@ -17,7 +17,7 @@ async function connect (){
   await client.connect();
   const db = client.db('Messenger');
   users = db.collection('Users');
-  messages = client.db('Messenger').collection('Messages');
+  messages = db.collection('Messages');
   groupChats = db.collection('GroupChats');
   await groupChats.createIndex({ name: 1 }, { unique: true });
   await ensureGlobalGroupChat();
@@ -309,20 +309,12 @@ module.exports = {
   find,
   register,
   updateProfile,
+  saveGroupMessage,
+  savePrivateMessage,
+  getGroupHistory,
+  getPrivateHistory,
   getAllGroupChatNames,
   getUserGroupChats,
   createGroupChat,
   updateUserGroupChat
-};
-
-
-module.exports = {
-  connect,
-  find,
-  register,
-  updateProfile,
-  saveGroupMessage,
-  savePrivateMessage,
-  getGroupHistory,
-  getPrivateHistory
 };
