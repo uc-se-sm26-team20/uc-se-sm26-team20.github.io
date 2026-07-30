@@ -344,7 +344,7 @@ body.dark-mode #character-counter {
        Responsive
        =========================== */
 
-    @media(max-width:850px){
+        @media(max-width:850px){
 
       .chat-layout {
         grid-template-columns:1fr;
@@ -355,7 +355,48 @@ body.dark-mode #character-counter {
       }
     }
 
->>>>>>> origin/main
+    /* ===========================
+       Dark Mode Fixes
+       =========================== */
+
+    body.dark-mode .auth-container,
+    body.dark-mode .panel,
+    body.dark-mode .private-panel {
+      background:#2d2d2d;
+      color:#f5f5f5;
+      border-color:#666;
+    }
+
+    body.dark-mode .group-tab {
+      background:#3b3b3b;
+      color:#ffffff;
+      border-color:#666;
+    }
+
+    body.dark-mode .group-tab.active {
+      background:#555;
+      color:#fff;
+    }
+
+    body.dark-mode #online-users-count {
+      background:#3b3b3b;
+      color:#fff;
+    }
+
+    body.dark-mode #private-user-select {
+      background:#3b3b3b;
+      color:#fff;
+      border:1px solid #666;
+    }
+
+    body.dark-mode #responses > div,
+    body.dark-mode #private-responses > div {
+      background:#3b3b3b;
+      color:#fff;
+      border-color:#666;
+    }
+
+  </style>
   </style>
 </head>
 
