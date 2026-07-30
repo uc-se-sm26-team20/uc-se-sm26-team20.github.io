@@ -42,6 +42,15 @@ const PORT =
 
     await messengerdb.connect();
 
+    const savedGroups =
+      await messengerdb.getAllGroupChatNames();
+
+    savedGroups.forEach(
+      (group)=>{
+        addAvailableGroup(group);
+      }
+    );
+
     server.listen(
       PORT,
       ()=>{
@@ -362,22 +371,28 @@ io.on(
 
 
 
-      if(
-        !userGroups.has(username)
-      ){
-
-        userGroups.set(
-          username,
-          new Set()
-        );
-
-      }
+      const savedGroups =
+        await messengerdb.getUserGroupChats(username);
 
 
+      const groups =
+        new Set(savedGroups);
 
-      userGroups
-        .get(username)
-        .add(GLOBAL_GROUP);
+
+      groups.add(GLOBAL_GROUP);
+
+
+      groups.forEach(
+        (group)=>{
+          addAvailableGroup(group);
+        }
+      );
+
+
+      userGroups.set(
+        username,
+        groups
+      );
 
 
 
@@ -674,7 +689,7 @@ socket.on(
 
 socket.on(
   "create-group",
-  (groupName)=>{
+  async(groupName)=>{
 
 
     if(!authorizeUser(socket)){
@@ -706,51 +721,73 @@ socket.on(
 
 
 
-    if(
-      availableGroups.includes(group)
-    ){
+    try{
+
+
+      const result =
+        await messengerdb.createGroupChat(
+          creator,
+          group
+        );
+
+
+      if(!result.success){
+
+        socket.emit(
+          "group-update-status",
+          result.message
+        );
+
+        return;
+
+      }
+
+
+      addAvailableGroup(group);
+
+
+      const groups =
+        userGroups.get(creator) ||
+        new Set();
+
+
+      groups.add(group);
+
+
+      userGroups.set(
+        creator,
+        groups
+      );
+
+
+      sendUserGroups(
+        creator
+      );
+
 
       socket.emit(
         "group-update-status",
-        "Group already exists."
+        "Created group: " + group
       );
 
-      return;
 
     }
+    catch(error){
 
 
-
-    availableGroups.push(group);
-
-
-
-    const groups =
-      userGroups.get(creator) ||
-      new Set();
+      console.error(
+        "Create group error:",
+        error
+      );
 
 
-
-    groups.add(group);
-
-
-
-    userGroups.set(
-      creator,
-      groups
-    );
+      socket.emit(
+        "group-update-status",
+        "Server error creating group."
+      );
 
 
-
-    sendUserGroups(
-      creator
-    );
-
-
-    socket.emit(
-      "group-update-status",
-      "Created group: " + group
-    );
+    }
 
 
   }
@@ -1143,7 +1180,7 @@ function sendConnectedUsers(){
 // =============================================================================
 
 
-function updateUserGroup(
+async function updateUserGroup(
   socket,
   data,
   action
@@ -1234,57 +1271,119 @@ function updateUserGroup(
 
 
 
-  const groups =
-    userGroups.get(username) ||
-    new Set();
+  try{
 
 
+    const result =
+      await messengerdb.updateUserGroupChat(
+        username,
+        group,
+        action
+      );
 
-  if(action === "add"){
 
-    groups.add(group);
+    if(!result.success){
+
+      socket.emit(
+        "group-update-status",
+        result.message
+      );
+
+      return;
+
+    }
+
+
+    const groups =
+      userGroups.get(username) ||
+      new Set();
+
+
+    if(action === "add"){
+
+      groups.add(group);
+
+    }
+    else{
+
+      groups.delete(group);
+
+    }
+
+
+    userGroups.set(
+      username,
+      groups
+    );
+
+
+    sendUserGroups(
+      username
+    );
+
+
+    sendToUser(
+      username,
+      "status",
+      action === "add"
+        ? "You were added to " + group
+        : "You were removed from " + group
+    );
+
+
+    socket.emit(
+      "group-update-status",
+      "Updated groups for " +
+      username
+    );
+
 
   }
-  else{
+  catch(error){
 
-    groups.delete(group);
+
+    console.error(
+      "Update user group error:",
+      error
+    );
+
+
+    socket.emit(
+      "group-update-status",
+      "Server error updating group membership."
+    );
+
 
   }
-
-
-
-  userGroups.set(
-    username,
-    groups
-  );
-
-
-
-  sendUserGroups(
-    username
-  );
-
-
-
-  sendToUser(
-    username,
-    "status",
-    action === "add"
-      ? "You were added to " + group
-      : "You were removed from " + group
-  );
-
-
-
-  socket.emit(
-    "group-update-status",
-    "Updated groups for " +
-    username
-  );
 
 
 }
 
+
+
+
+// =============================================================================
+// TRACK AVAILABLE GROUPS
+// =============================================================================
+
+
+function addAvailableGroup(group){
+
+
+  if(
+    typeof group === "string" &&
+    group.trim() &&
+    !availableGroups.includes(group.trim())
+  ){
+
+    availableGroups.push(
+      group.trim()
+    );
+
+  }
+
+
+}
 
 
 

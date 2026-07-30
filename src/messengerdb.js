@@ -10,11 +10,39 @@ const uri = "mongodb+srv://Admin:Administrator@messenger.odudlov.mongodb.net/?ap
 const client = new MongoClient(uri);
 
 let users;
+let groupChats;
 
 async function connect (){
   await client.connect();
-  users = client.db('Messenger').collection('Users');
+  const db = client.db('Messenger');
+  users = db.collection('Users');
+  groupChats = db.collection('GroupChats');
+  await groupChats.createIndex({ name: 1 }, { unique: true });
+  await ensureGlobalGroupChat();
   console.log('Debug>messengerdb.js: connected to MongoDB server!');
+}
+
+async function ensureGlobalGroupChat() {
+  const globalGroup = await groupChats.findOneAndUpdate(
+    { name: 'Global' },
+    {
+      $setOnInsert: {
+        name: 'Global',
+        createdBy: null,
+        members: [],
+        createdAt: new Date()
+      },
+      $set: {
+        updatedAt: new Date()
+      }
+    },
+    {
+      upsert: true,
+      returnDocument: 'after'
+    }
+  );
+
+  return globalGroup;
 }
 
 //UCse-Case-03: Join Chat
@@ -50,7 +78,21 @@ const register = async (username, password) => {
 
   //AC-05.6
   const hashedPassword = await bcrypt.hash(password, 10);
-  await users.insertOne({ username: username, password: hashedPassword });
+  const globalGroup = await ensureGlobalGroupChat();
+  const result = await users.insertOne({
+    username: username,
+    password: hashedPassword,
+    groupChats: [globalGroup._id]
+  });
+
+  await groupChats.updateOne(
+    { _id: globalGroup._id },
+    {
+      $addToSet: { members: result.insertedId },
+      $set: { updatedAt: new Date() }
+    }
+  );
+
   return { success: true, message: 'User registered successfully' }; //Ac-05.7
 };
 
@@ -90,5 +132,152 @@ const updateProfile = async (oldUsername, newUsername, newPassword) => {
   return { success: true, message: 'Profile updated successfully' };
 };
 
+const getAllGroupChatNames = async () => {
+  const chats = await groupChats
+    .find({}, { projection: { name: 1 } })
+    .sort({ name: 1 })
+    .toArray();
 
-module.exports = { connect, find, register, updateProfile };
+  return chats
+    .map((chat) => chat.name)
+    .filter((name) => typeof name === 'string' && name.trim());
+};
+
+const getUserGroupChats = async (username) => {
+  const user = await users.findOne(
+    { username: username },
+    { projection: { groupChats: 1 } }
+  );
+
+  if (!user) return [];
+
+  const globalGroup = await ensureGlobalGroupChat();
+
+  await users.updateOne(
+    { _id: user._id },
+    { $addToSet: { groupChats: globalGroup._id } }
+  );
+
+  await groupChats.updateOne(
+    { _id: globalGroup._id },
+    {
+      $addToSet: { members: user._id },
+      $set: { updatedAt: new Date() }
+    }
+  );
+
+  const groupIds = Array.isArray(user.groupChats)
+    ? user.groupChats.concat(globalGroup._id)
+    : [globalGroup._id];
+
+  const chats = await groupChats
+    .find(
+      { _id: { $in: groupIds } },
+      { projection: { name: 1 } }
+    )
+    .sort({ name: 1 })
+    .toArray();
+
+  return chats
+    .map((chat) => chat.name)
+    .filter((name) => typeof name === 'string' && name.trim());
+};
+
+const createGroupChat = async (creatorUsername, groupName) => {
+  const name = String(groupName || '').trim();
+  if (!name) return { success: false, message: 'Group name is required' };
+
+  const creator = await users.findOne({ username: creatorUsername });
+  if (!creator) return { success: false, message: 'Creator user not found' };
+
+  const existing = await groupChats.findOne({ name: name });
+  if (existing) return { success: false, message: 'Group already exists' };
+
+  const now = new Date();
+  let result;
+
+  try {
+    result = await groupChats.insertOne({
+      name: name,
+      createdBy: creator._id,
+      members: [creator._id],
+      createdAt: now,
+      updatedAt: now
+    });
+  } catch (error) {
+    if (error && error.code === 11000) {
+      return { success: false, message: 'Group already exists' };
+    }
+
+    throw error;
+  }
+
+  await users.updateOne(
+    { _id: creator._id },
+    { $addToSet: { groupChats: result.insertedId } }
+  );
+
+  return {
+    success: true,
+    message: 'Group created successfully',
+    group: {
+      _id: result.insertedId,
+      name: name
+    }
+  };
+};
+
+const updateUserGroupChat = async (username, groupName, action) => {
+  const user = await users.findOne({ username: username });
+  if (!user) return { success: false, message: 'User not found' };
+
+  const group = await groupChats.findOne({ name: groupName });
+  if (!group) return { success: false, message: 'Group not found' };
+
+  if (action === 'add') {
+    await users.updateOne(
+      { _id: user._id },
+      { $addToSet: { groupChats: group._id } }
+    );
+
+    await groupChats.updateOne(
+      { _id: group._id },
+      {
+        $addToSet: { members: user._id },
+        $set: { updatedAt: new Date() }
+      }
+    );
+
+    return { success: true, message: 'User added to group' };
+  }
+
+  if (action === 'delete') {
+    await users.updateOne(
+      { _id: user._id },
+      { $pull: { groupChats: group._id } }
+    );
+
+    await groupChats.updateOne(
+      { _id: group._id },
+      {
+        $pull: { members: user._id },
+        $set: { updatedAt: new Date() }
+      }
+    );
+
+    return { success: true, message: 'User removed from group' };
+  }
+
+  return { success: false, message: 'Invalid group action' };
+};
+
+module.exports = {
+  connect,
+  find,
+  register,
+  updateProfile,
+  getAllGroupChatNames,
+  getUserGroupChats,
+  createGroupChat,
+  updateUserGroupChat
+};
