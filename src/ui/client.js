@@ -11,9 +11,42 @@ const socket = io();
 let currentUsername = "";
 let selectedGroup = "";
 
+ HEAD
+const sendButtonElement = document.getElementById("send-button");
+const chatMessageInput = document.getElementById("chat-message");
+const responsesElement = document.getElementById("responses");
+const statusElement = document.getElementById("status");
+const loginScreen = document.getElementById("login-screen");
+const mainChat = document.getElementById("main-chat");
+const joinButton = document.getElementById("join-button");
+const usernameInput = document.getElementById("username");
+const themeToggle = document.getElementById("theme-toggle");
+const characterCounter = document.getElementById("character-counter");
+
+const typingIndicator = document.getElementById("typing-indicator");
+let typingTimer;
+let isTyping = false;//Typing indicator defined
+
+if (
+  !sendButtonElement ||
+  !chatMessageInput ||
+  !responsesElement ||
+  !statusElement ||
+  !loginScreen ||
+  !mainChat ||
+  !joinButton ||
+  !usernameInput ||
+  !themeToggle ||
+  !characterCounter
+  
+) {
+  throw new Error("One or more required messenger UI elements are missing.");
+}
+
 let typingTimer = null;
 let isTyping = false;
 
+origin/main
 
 // =============================================================================
 // Socket Connection
@@ -180,6 +213,13 @@ showLoginButton.addEventListener(
     registerError.textContent = "";
 
   }
+   HEAD
+});
+chatMessageInput.addEventListener("input", () => {
+  characterCounter.textContent =
+    chatMessageInput.value.length + " / 500 characters";
+});
+
 );
 
 
@@ -470,6 +510,7 @@ chatMessageInput.addEventListener(
 );
 
 
+>>>>>>> origin/main
 
 chatMessageInput.addEventListener(
   "input",
@@ -540,8 +581,13 @@ function sendMessage(){
 
 
   chatMessageInput.value = "";
+   HEAD
+characterCounter.textContent = "0 / 500 characters";
+chatMessageInput.focus();
+
 
   chatMessageInput.focus();
+origin/main
 
 
   isTyping = false;
@@ -1293,5 +1339,39 @@ socket.on(
     );
 
   }
+
+  else {
+    typingIndicator.textContent = users.join(", ") + " are typing...";
+  }
+});
+// =============================================================================
+// Dark / Light Mode
+// =============================================================================
+
+const savedTheme = localStorage.getItem("theme");
+
+if (savedTheme === "dark") {
+  document.body.classList.add("dark-mode");
+  themeToggle.textContent = "☀️ Light Mode";
+}
+
+themeToggle.addEventListener("click", () => {
+  document.body.classList.toggle("dark-mode");
+
+  const darkModeEnabled =
+    document.body.classList.contains("dark-mode");
+
+  themeToggle.textContent = darkModeEnabled
+    ? "☀️ Light Mode"
+    : "🌙 Dark Mode";
+
+  localStorage.setItem(
+    "theme",
+    darkModeEnabled ? "dark" : "light"
+  );
+});
+characterCounter.textContent = "0 / 500 characters";
+
 );
 
+ origin/main
