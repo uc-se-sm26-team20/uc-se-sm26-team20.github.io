@@ -629,14 +629,16 @@ socket.on(
 
 
 
-function displayMessage(data){
+function displayMessage(data, timestampOverride){
 
   const element =
     document.createElement("div");
 
 
   const timestamp =
-    new Date().toLocaleTimeString();
+    timestampOverride
+      ? new Date(timestampOverride).toLocaleTimeString()
+      : new Date().toLocaleTimeString();
 
 
 
@@ -662,6 +664,37 @@ function displayMessage(data){
     responses.scrollHeight;
 
 }
+
+
+
+// =============================================================================
+// Chat History (public groups)
+// =============================================================================
+
+
+socket.on(
+  "message-history",
+  (history)=>{
+
+    if(!Array.isArray(history)){
+
+      return;
+
+    }
+
+    history.forEach(
+      (item)=>{
+
+        displayMessage(
+          item.text,
+          item.timestamp
+        );
+
+      }
+    );
+
+  }
+);
 
 
 
@@ -1058,7 +1091,7 @@ socket.on(
 
 
 
-function displayPrivateMessage(data){
+function displayPrivateMessage(data, timestampOverride){
 
 
   const element =
@@ -1066,7 +1099,9 @@ function displayPrivateMessage(data){
 
 
   const timestamp =
-    new Date().toLocaleTimeString();
+    timestampOverride
+      ? new Date(timestampOverride).toLocaleTimeString()
+      : new Date().toLocaleTimeString();
 
 
 
@@ -1111,6 +1146,37 @@ function displayPrivateMessage(data){
 
 
 }
+
+
+
+// =============================================================================
+// Chat History (private messages)
+// =============================================================================
+
+
+socket.on(
+  "private-message-history",
+  (history)=>{
+
+    if(!Array.isArray(history)){
+
+      return;
+
+    }
+
+    history.forEach(
+      (item)=>{
+
+        displayPrivateMessage(
+          item,
+          item.timestamp
+        );
+
+      }
+    );
+
+  }
+);
 
 
 

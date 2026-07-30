@@ -406,6 +406,61 @@ io.on(
 
 
 
+      try{
+
+        const groups =
+          Array.from(userGroups.get(username) || []);
+
+        const groupHistory = [];
+
+        for(const group of groups){
+
+          const groupMessages =
+            await messengerdb.getGroupHistory(group);
+
+          groupMessages.forEach(
+            (msg)=>{
+
+              groupHistory.push({
+                text: "[" + msg.group + "] " + msg.from + " says: " + msg.message,
+                timestamp: msg.timestamp
+              });
+
+            }
+          );
+
+        }
+
+        groupHistory.sort(
+          (a,b)=> new Date(a.timestamp) - new Date(b.timestamp)
+        );
+
+        socket.emit(
+          "message-history",
+          groupHistory
+        );
+
+
+
+        const privateHistory =
+          await messengerdb.getPrivateHistory(username);
+
+        socket.emit(
+          "private-message-history",
+          privateHistory
+        );
+
+      }
+      catch(error){
+
+        console.error(
+          "Debug>server.js: failed to load chat history",
+          error
+        );
+
+      }
+
+
     }
   );
 
@@ -577,7 +632,7 @@ io.on(
 
 socket.on(
   "message",
-  (data)=>{
+  async(data)=>{
 
 
     if(!authorizeUser(socket)){
@@ -644,6 +699,26 @@ socket.on(
       );
 
       return;
+
+    }
+
+
+
+    try{
+
+      await messengerdb.saveGroupMessage(
+        group,
+        sender,
+        message
+      );
+
+    }
+    catch(error){
+
+      console.error(
+        "Debug>server.js: failed to save group message",
+        error
+      );
 
     }
 
@@ -866,7 +941,7 @@ socket.on(
 
 socket.on(
   "private-message",
-  (data)=>{
+  async(data)=>{
 
 
     if(!authorizeUser(socket)){
@@ -929,6 +1004,26 @@ socket.on(
         String(data.message).trim()
 
     };
+
+
+
+    try{
+
+      await messengerdb.savePrivateMessage(
+        sender,
+        recipient,
+        privateMessage.message
+      );
+
+    }
+    catch(error){
+
+      console.error(
+        "Debug>server.js: failed to save private message",
+        error
+      );
+
+    }
 
 
 
