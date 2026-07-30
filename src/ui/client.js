@@ -22,6 +22,8 @@ const loginScreen = document.getElementById("login-screen");
 const mainChat = document.getElementById("main-chat");
 const joinButton = document.getElementById("join-button");
 const usernameInput = document.getElementById("username");
+const themeToggle = document.getElementById("theme-toggle");
+const characterCounter = document.getElementById("character-counter");
 
 const typingIndicator = document.getElementById("typing-indicator");
 let typingTimer;
@@ -35,7 +37,10 @@ if (
   !loginScreen ||
   !mainChat ||
   !joinButton ||
-  !usernameInput
+  !usernameInput ||
+  !themeToggle ||
+  !characterCounter
+  
 ) {
   throw new Error("One or more required messenger UI elements are missing.");
 }
@@ -79,6 +84,10 @@ chatMessageInput.addEventListener("keydown", (event) => {
     event.preventDefault();
     sendMessage();
   }
+});
+chatMessageInput.addEventListener("input", () => {
+  characterCounter.textContent =
+    chatMessageInput.value.length + " / 500 characters";
 });
 
 chatMessageInput.addEventListener(
@@ -143,7 +152,8 @@ function sendMessage() {
 
   // AC-01.5: clear and refocus the input after sending.
   chatMessageInput.value = "";
-  chatMessageInput.focus();
+characterCounter.textContent = "0 / 500 characters";
+chatMessageInput.focus();
 
   socket.emit("stopTyping");
   isTyping = false;
@@ -219,3 +229,30 @@ socket.on("typingUsers", (users) => {
     typingIndicator.textContent = users.join(", ") + " are typing...";
   }
 });
+// =============================================================================
+// Dark / Light Mode
+// =============================================================================
+
+const savedTheme = localStorage.getItem("theme");
+
+if (savedTheme === "dark") {
+  document.body.classList.add("dark-mode");
+  themeToggle.textContent = "☀️ Light Mode";
+}
+
+themeToggle.addEventListener("click", () => {
+  document.body.classList.toggle("dark-mode");
+
+  const darkModeEnabled =
+    document.body.classList.contains("dark-mode");
+
+  themeToggle.textContent = darkModeEnabled
+    ? "☀️ Light Mode"
+    : "🌙 Dark Mode";
+
+  localStorage.setItem(
+    "theme",
+    darkModeEnabled ? "dark" : "light"
+  );
+});
+characterCounter.textContent = "0 / 500 characters";
