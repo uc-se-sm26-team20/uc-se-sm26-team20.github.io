@@ -71,6 +71,9 @@ const showLoginButton =
 const logoutButton =
   document.getElementById("logoutBTN");
 
+const profileButton =
+  document.getElementById("profileBTN");
+
 
 const displayName =
   document.getElementById("display-name");
@@ -283,6 +286,7 @@ socket.on(
     displayName.textContent =
       username;
 
+    localStorage.setItem("oldUsername", username);
 
     chatMessageInput.focus();
 
@@ -404,6 +408,50 @@ socket.on(
 
 
 // =============================================================================
+// Profile Updates
+// =============================================================================
+
+if (profileButton) {
+  profileButton.addEventListener(
+    "click",
+    () => {
+      // Instead of redirecting and disconnecting, we stay on the page and use the socket.
+      const newUsername = prompt("Enter new username (3-20 chars):", currentUsername);
+      if (!newUsername) return;
+      
+      const newPassword = prompt("Enter new password (min 6 chars, 1 letter, 1 number):");
+      if (!newPassword) return;
+
+      // Trigger the update via the socket listener already implemented in server.js
+      socket.emit("update-profile", {
+        newUsername: newUsername.trim(),
+        newPassword: newPassword
+      });
+    }
+  );
+}
+
+socket.on("update-profile-success", (data) => {
+  // Update local variables and UI
+  currentUsername = data.username;
+  displayName.textContent = data.username;
+
+  // Also update localStorage so other pages (like a profile settings page) 
+  // know the identity has changed.
+  localStorage.setItem("oldUsername", data.username);
+
+  displayStatus("System: Your profile was successfully updated (DB record recreated).");
+});
+
+
+socket.on("update-profile-error", (message) => {
+  displayStatus("Profile Update Error: " + message);
+});
+
+
+
+
+// =============================================================================
 // Logout
 // =============================================================================
 
@@ -433,6 +481,8 @@ socket.on(
     usernameInput.value = "";
 
     passwordInput.value = "";
+
+    localStorage.removeItem("oldUsername");
 
 
     responses.innerHTML = "";

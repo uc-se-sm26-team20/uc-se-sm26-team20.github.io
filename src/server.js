@@ -101,6 +101,8 @@ app.use(
 );
 
 
+app.use(express.json());
+
 
 // Serve UI files
 
@@ -109,6 +111,31 @@ app.use(
     path.join(__dirname,"ui")
   )
 );
+
+
+// =============================================================================
+// Profile Update HTTP Endpoint
+// =============================================================================
+
+app.post("/update-profile", async (req, res) => {
+  const { oldUsername, newUsername, newPassword } = req.body;
+
+  if (!oldUsername || !newUsername || !newPassword) {
+    return res.status(400).json({ success: false, message: "Missing fields" });
+  }
+
+  try {
+    const result = await messengerdb.updateProfile(oldUsername.trim(), newUsername.trim(), newPassword);
+
+    if (result.success) {
+      syncUserUpdate(oldUsername.trim(), newUsername.trim());
+    }
+    res.json(result);
+  } catch (error) {
+    console.error("Profile update error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
 
 
 
@@ -167,6 +194,48 @@ function authorizeUser(socket){
 
 }
 
+
+
+/**
+ * Updates the server's internal maps when a profile is changed/recreated.
+ */
+function syncUserUpdate(oldUsername, newUsername) {
+  if (!oldUsername || !newUsername) return;
+
+  const nameChanged = oldUsername !== newUsername;
+
+  if (nameChanged) {
+    // Migrate group memberships to the new key
+    if (userGroups.has(oldUsername)) {
+      const groups = userGroups.get(oldUsername);
+      userGroups.set(newUsername, groups);
+      userGroups.delete(oldUsername);
+    }
+    // Update typing state
+    if (typingUsers.has(oldUsername)) {
+      typingUsers.delete(oldUsername);
+      typingUsers.add(newUsername);
+    }
+  }
+
+  // Update all sockets belonging to this user
+  userlist.forEach((username, socketId) => {
+    if (username === oldUsername) {
+      if (nameChanged) userlist.set(socketId, newUsername);
+      
+      const clientSocket = io.sockets.sockets.get(socketId);
+      if (clientSocket) {
+        clientSocket.emit("update-profile-success", { username: newUsername });
+        if (nameChanged) sendUserGroups(newUsername);
+      }
+    }
+  });
+
+  if (nameChanged) {
+    sendToAuthenticatedClients("status", `${oldUsername} is now known as ${newUsername}`);
+    sendConnectedUsers();
+  }
+}
 
 
 function sendToAuthenticatedClients(
@@ -341,6 +410,47 @@ io.on(
   );
 
 
+
+
+
+  // ===========================================================================
+  // UPDATE PROFILE
+  // ===========================================================================
+
+  socket.on("update-profile", async (data) => {
+    if (!authorizeUser(socket)) {
+      socket.emit("not-authorized");
+      return;
+    }
+
+    const oldUsername = userlist.get(socket.id);
+    const { newUsername, newPassword } = data;
+
+    if (!newUsername || !newPassword) {
+      socket.emit("update-profile-error", "Username and password are required.");
+      return;
+    }
+
+    try {
+      const result = await messengerdb.updateProfile(
+        oldUsername,
+        newUsername.trim(),
+        newPassword
+      );
+
+      if (!result.success) {
+        socket.emit("update-profile-error", result.message);
+        return;
+      }
+
+      // DB update successful; now sync the running server state
+      syncUserUpdate(oldUsername, newUsername.trim());
+
+    } catch (error) {
+      console.error("Socket update error:", error);
+      socket.emit("update-profile-error", "Internal server error during update.");
+    }
+  });
 
 
 
@@ -841,54 +951,6 @@ socket.on(
   }
 );
 
-
-
-
-// =============================================================================
-// SEND ONLINE USER LIST
-// =============================================================================
-
-
-function sendConnectedUsers(){
-
-
-  const users =
-    [];
-
-
-  userlist.forEach(
-    (username,socketId)=>{
-
-
-      users.push(
-        {
-          socketId,
-          username
-        }
-      );
-
-
-    }
-  );
-
-
-
-  sendToAuthenticatedClients(
-    "online-users",
-    users
-  );
-
-
-  sendToAuthenticatedClients(
-    "connected-users",
-    users.map(
-      user=>user.username
-    )
-  );
-
-
-}
-
 // =============================================================================
 // LOGOUT / LEAVE CHAT
 // =============================================================================
@@ -1026,6 +1088,53 @@ socket.on(
 
 }); // END io.on(connection)
 
+
+
+
+// =============================================================================
+// SEND ONLINE USER LIST
+// =============================================================================
+
+
+function sendConnectedUsers(){
+
+
+  const users =
+    [];
+
+
+  userlist.forEach(
+    (username,socketId)=>{
+
+
+      users.push(
+        {
+          socketId,
+          username
+        }
+      );
+
+
+    }
+  );
+
+
+
+  sendToAuthenticatedClients(
+    "online-users",
+    users
+  );
+
+
+  sendToAuthenticatedClients(
+    "connected-users",
+    users.map(
+      user=>user.username
+    )
+  );
+
+
+}
 
 
 
