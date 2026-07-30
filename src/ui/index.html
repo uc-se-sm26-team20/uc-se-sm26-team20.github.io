@@ -11,89 +11,234 @@
   <title>Team 20 Messenger</title>
 
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      max-width: 760px;
-      margin: 40px auto;
+      max-width: 1120px;
+      margin: 35px auto;
       padding: 0 20px;
       font-family: Arial, Helvetica, sans-serif;
       line-height: 1.5;
+      background-color: #f3f5f8;
+      color: #222;
     }
 
     h1 {
       margin-bottom: 5px;
     }
 
+    h2 {
+      margin-top: 0;
+    }
+
     .subtitle {
       margin-top: 0;
       margin-bottom: 25px;
-    }
-
-    .message-controls {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 25px;
-    }
-
-    #chat-message {
-      flex: 1;
-      min-width: 0;
-      padding: 10px;
-      font-size: 16px;
-    }
-
-    #send-button {
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    .login-container {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      max-width: 400px;
-      margin: 100px auto;
-      padding: 30px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      color: #555;
     }
 
     .hidden {
       display: none !important;
     }
 
-    .message-area {
-      width: 100%;
-      height: 130px;
-      box-sizing: border-box;
-      padding: 10px;
-      margin-bottom: 20px;
-      overflow-y: auto;
-      border: 1px solid #777;
-      background-color: #ffffff;
+    /* ===========================
+       Authentication Screens
+       =========================== */
+
+    .auth-container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      max-width: 400px;
+      margin: 80px auto;
+      padding: 30px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background-color: white;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
     }
+
+    .auth-container input {
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    .auth-container button {
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .error-message {
+      color: red;
+      min-height: 20px;
+    }
+
+    .link-button {
+      color: #2431e5;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+
+    /* ===========================
+       Group Tabs
+       =========================== */
+
+    .group-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .group-tab {
+      padding: 10px 14px;
+      border: 1px solid #ccc;
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      background-color: #e9edf3;
+      cursor: pointer;
+    }
+
+    .group-tab.active {
+      background-color: white;
+      font-weight: bold;
+    }
+
+
+    #my-groups {
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+
+
+    /* ===========================
+       Main Chat Layout
+       =========================== */
+
+    .chat-layout {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) 310px;
+      gap:20px;
+      align-items:start;
+    }
+
+    .chat-column,
+    .side-column {
+      display:flex;
+      flex-direction:column;
+      gap:20px;
+    }
+
+
+    .panel {
+      padding:18px;
+      border:1px solid #d4d8df;
+      border-radius:10px;
+      background:white;
+      box-shadow:0 2px 8px rgba(0,0,0,0.05);
+    }
+
+
+    /* ===========================
+       Chat Controls
+       =========================== */
+
+    .message-controls {
+      display:flex;
+      gap:10px;
+      margin-bottom:12px;
+    }
+
+    #chat-message,
+    #private-chat-message {
+      flex:1;
+      padding:12px;
+      font-size:16px;
+      border:1px solid #bbb;
+      border-radius:8px;
+    }
+
+
+    button {
+      border-radius:8px;
+      border:none;
+      background:#2431e5;
+      color:white;
+      cursor:pointer;
+      padding:10px 18px;
+    }
+
+    button:hover {
+      background:#1d27b8;
+    }
+
+
+    .message-area {
+      width:100%;
+      overflow-y:auto;
+      padding:12px;
+      border:1px solid #cfd4dc;
+      border-radius:8px;
+      background:#f8f9fb;
+    }
+
+
+    #responses {
+      height:420px;
+    }
+
+
+    #private-responses {
+      height:250px;
+      margin-bottom:12px;
+    }
+
 
     #status {
-      background-color: #f5f5f5;
+      height:250px;
     }
+
+
+    #responses > div,
+    #private-responses > div {
+      max-width:92%;
+      margin-bottom:10px;
+      padding:10px 12px;
+      border-radius:10px;
+      background:white;
+      border:1px solid #e1e4ea;
+      overflow-wrap:anywhere;
+    }
+
 
     .message-time {
-      color: #2431e5;
-      font-weight: bold;
+      color:#2431e5;
+      font-weight:bold;
     }
+
 
     .status-time {
-      color: #168216;
-      font-weight: bold;
+      color:#168216;
+      font-weight:bold;
     }
 
-    #typing-indicator {
-      height: 20px;
-      margin-bottom: 15px;
-      font-style: italic;
-      color: #666;
+
+    /* ===========================
+       Private Chat
+       =========================== */
+
+    .private-panel {
+      padding:15px;
+      border:3px solid #6a1b9a;
+      border-radius:10px;
+      background:#faf2ff;
+      margin-bottom:25px;
     }
+
     .theme-button {
   display: block;
   margin-left: auto;
@@ -163,11 +308,60 @@ body.dark-mode #typing-indicator {
 body.dark-mode #character-counter {
   color: #cccccc;
 }
+
+
+
+    #private-user-select {
+      width:100%;
+      padding:8px;
+      margin-bottom:10px;
+    }
+
+
+    /* ===========================
+       Online Users
+       =========================== */
+
+    .online-users-box {
+      min-height:150px;
+    }
+
+
+    #online-users-count {
+      padding:8px;
+      background:#eef1ff;
+      border-radius:8px;
+      font-weight:bold;
+    }
+
+
+    #online-users-list {
+      padding-left:20px;
+    }
+
+
+    /* ===========================
+       Responsive
+       =========================== */
+
+    @media(max-width:850px){
+
+      .chat-layout {
+        grid-template-columns:1fr;
+      }
+
+      #responses {
+        height:330px;
+      }
+    }
+
+>>>>>>> origin/main
   </style>
 </head>
 
+
 <body>
-  <h1>Team 20 Messenger</h1>
+
 
   <p class="subtitle">
     EECE/CS 3093C Software Engineering — Summer 2026
@@ -180,81 +374,508 @@ body.dark-mode #character-counter {
   🌙 Dark Mode
 </button>
 
-  <div id="login-screen" class="login-container">
-    <label for="username">Enter your username to join:</label>
+<h1>Team 20 Messenger</h1>
+ 
 
-    <input
-      id="username"
-      type="text"
-      placeholder="Username..."
-      style="padding: 10px; font-size: 16px;"
-    >
+<p class="subtitle">
+  EECE/CS 3093C Software Engineering — Summer 2026
+</p>
 
-    <button
-      id="join-button"
-      type="button"
-      style="padding: 10px; font-size: 16px; cursor: pointer;"
-    >
-      Join Chat
-    </button>
+
+<!-- =====================================================
+     LOGIN SCREEN
+     ===================================================== -->
+
+<div id="loginUI" class="auth-container">
+
+  <label for="username">
+    Username:
+  </label>
+
+  <input
+    id="username"
+    type="text"
+    maxlength="20"
+    placeholder="Username"
+  >
+
+
+  <label for="password">
+    Password:
+  </label>
+
+  <input
+    id="password"
+    type="password"
+    placeholder="Password"
+  >
+
+
+  <button
+    id="joinBTN"
+    type="button">
+    Join Chat
+  </button>
+
+
+  <div
+    id="login-error"
+    class="error-message">
   </div>
 
-  <div id="main-chat" class="hidden">
+
+  <p>
+    Don't have an account?
+    <span
+      id="showRegisterBtn"
+      class="link-button">
+      Register here!
+    </span>
+  </p>
+
+</div>
+
+
+
+<!-- =====================================================
+     REGISTER SCREEN
+     ===================================================== -->
+
+<div id="registerUI" class="auth-container hidden">
+
+  <h2>
+    Register New Account
+  </h2>
+
+
+  <label for="reg-username">
+    Username:
+  </label>
+
+  <input
+    id="reg-username"
+    type="text"
+    maxlength="20"
+    placeholder="Username"
+  >
+
+
+  <label for="reg-password">
+    Password:
+  </label>
+
+  <input
+    id="reg-password"
+    type="password"
+    placeholder="Password"
+  >
+
+
+  <button
+    id="registerBTN"
+    type="button">
+    Register
+  </button>
+
+
+  <p
+    id="register-error"
+    class="error-message">
+  </p>
+
+
+  <p>
+    Already have an account?
+    <span
+      id="showLoginBtn"
+      class="link-button">
+      Login here!
+    </span>
+  </p>
+
+</div>
+
+<!-- =====================================================
+     MAIN CHAT UI
+     ===================================================== -->
+
+<div id="chatUI" class="hidden">
+
+  <div class="panel">
+
+    <span>
+      Logged in as:
+      <strong id="display-name"></strong>
+    </span>
+
+    &nbsp;&nbsp;
+
+    <button
+      id="logoutBTN"
+      type="button">
+      Logout
+    </button>
+
+  </div>
+
+
+  <!-- ===========================
+       Group Navigation
+       =========================== -->
+
+  <div
+    class="group-tabs"
+    role="tablist"
+    aria-label="User groups">
+  </div>
+
+
+  <div
+    id="my-groups"
+    aria-live="polite">
+    My group chats: none
+  </div>
+
+
+
+  <!-- ===========================
+       Private Messaging
+       =========================== -->
+
+  <h2>
+    Private Chat
+  </h2>
+
+
+  <div class="private-panel">
+
+    <p>
+      Private messages are only sent to the selected online user.
+    </p>
+
+
+    <label for="private-user-select">
+      Send to:
+    </label>
+
+
+    <select
+      id="private-user-select">
+
+      <option value="">
+        Select an online user
+      </option>
+
+    </select>
+
+
+
+    <div
+      id="private-responses"
+      class="message-area"
+      aria-live="polite">
+    </div>
+
+
+
     <div class="message-controls">
+
+
       <input
-        id="chat-message"
+        id="private-chat-message"
         type="text"
         maxlength="500"
         autocomplete="off"
-        placeholder="Type a message..."
-        aria-label="Chat message"
+        placeholder="Type a private message..."
       >
 
+
+
       <button
-        id="send-button"
-        type="button"
-      >
-        Send
+        id="private-send-button"
+        type="button">
+
+        Send Private
+
       </button>
+
+
     </div>
     <div id="character-counter">
   0 / 500 characters
 </div>
 
-    <div id="typing-indicator"></div>
 
-    <h2>System Status</h2>
-
-    <div
-      id="status"
-      class="message-area"
-      aria-live="polite"
-    ></div>
-
-    <h2>Chat Responses</h2>
-
-    <div
-      id="responses"
-      class="message-area"
-      aria-live="polite"
-    ></div>
   </div>
 
-  <!-- Socket.IO client library supplied by the Node.js server. -->
-  <script src="/socket.io/socket.io.js"></script>
 
-  <!--
-    DOMPurify sanitizes displayed messages to help prevent
-    Cross-Site Scripting attacks.
-  -->
-  <script
-    src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.7/purify.min.js"
-    integrity="sha512-78KH17QLT5e55GJqP76vutp1D2iAoy06WcYBXB6iBCsmO6wWzx0Qdg8EDpm8mKXv68BcvHOyeeP4wxAL0twJGQ=="
-    crossorigin="anonymous"
-    referrerpolicy="no-referrer"
-  ></script>
 
-  <!-- Team 20 messenger client implementation. -->
-  <script src="client.js"></script>
+
+  <!-- ===========================
+       Main Messenger Layout
+       =========================== -->
+
+
+  <div class="chat-layout">
+
+
+    <div class="chat-column">
+
+
+
+      <!-- ===========================
+           Group Management
+           =========================== -->
+
+
+      <div class="panel">
+
+
+        <h2>
+          Group Management
+        </h2>
+
+
+        <div class="message-controls">
+
+
+          <input
+            id="new-group-name"
+            type="text"
+            placeholder="New group name"
+          >
+
+
+          <button
+            id="create-group-button"
+            type="button">
+
+            Create Group
+
+          </button>
+
+
+        </div>
+
+
+
+
+        <div class="message-controls">
+
+
+          <input
+            id="group-account-name"
+            type="text"
+            placeholder="Username"
+          >
+
+
+          <button
+            id="add-user-group-button"
+            type="button">
+
+            Add User
+
+          </button>
+
+
+
+          <button
+            id="delete-user-group-button"
+            type="button">
+
+            Remove User
+
+          </button>
+
+
+        </div>
+
+
+
+        <div
+          id="group-update-message"
+          aria-live="polite">
+
+        </div>
+
+
+      </div>
+
+
+
+
+
+      <!-- ===========================
+           Public Chat
+           =========================== -->
+
+
+      <div class="panel">
+
+
+        <h2>
+          Public Chat
+        </h2>
+
+
+
+        <div class="message-controls">
+
+
+          <input
+            id="chat-message"
+            type="text"
+            maxlength="500"
+            autocomplete="off"
+            placeholder="Type a message..."
+          >
+
+
+
+          <button
+            id="send-button"
+            type="button">
+
+            Send
+
+          </button>
+
+
+        </div>
+
+
+
+        <div
+          id="typing-indicator">
+
+        </div>
+
+
+
+        <div
+          id="responses"
+          class="message-area"
+          aria-live="polite">
+
+        </div>
+
+
+      </div>
+
+
+
+    </div>
+
+    <!-- ===========================
+         Side Column
+         =========================== -->
+
+    <div class="side-column">
+
+
+      <!-- ===========================
+           Online Users
+           =========================== -->
+
+
+      <div
+        class="panel online-users-box"
+        aria-live="polite">
+
+
+        <h2>
+          Online Users
+        </h2>
+
+
+        <div id="online-users-count">
+          0 users online
+        </div>
+
+
+        <ul id="online-users-list"></ul>
+
+
+        <!-- Authentication project compatibility -->
+        <div style="display:none;">
+          <strong id="user-list"></strong>
+        </div>
+
+
+      </div>
+
+
+
+
+      <!-- ===========================
+           System Status
+           =========================== -->
+
+
+      <div class="panel">
+
+
+        <h2>
+          System Status
+        </h2>
+
+
+        <div
+          id="status"
+          class="message-area"
+          aria-live="polite">
+
+        </div>
+
+
+      </div>
+
+
+
+    </div>
+
+
+  </div>
+
+
+</div>
+
+
+
+
+
+<!-- =====================================================
+     External Libraries
+     ===================================================== -->
+
+
+<!-- Socket.IO client supplied by Node server -->
+<script src="/socket.io/socket.io.js"></script>
+
+
+
+<!-- DOMPurify prevents unsafe HTML injection -->
+<script
+  src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.7/purify.min.js"
+  integrity="sha512-78KH17QLT5e55GJqP76vutp1D2iAoy06WcYBXB6iBCsmO6wWzx0Qdg8EDpm8mKXv68BcvHOyeeP4wxAL0twJGQ=="
+  crossorigin="anonymous"
+  referrerpolicy="no-referrer">
+</script>
+
+
+
+<!-- Optional Bootstrap support from authentication project -->
+<script
+  src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js">
+</script>
+
+
+
+<!-- Team 20 + Authentication merged client -->
+<script src="client.js"></script>
+
+
 </body>
 </html>
+
