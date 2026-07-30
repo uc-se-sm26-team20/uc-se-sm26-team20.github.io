@@ -9,16 +9,18 @@ const bcrypt = require('bcrypt');
 const uri = "mongodb+srv://Admin:Administrator@messenger.odudlov.mongodb.net/?appName=Messenger"; //replace this with your connection string
 const client = new MongoClient(uri);
 
+let users;
+
 async function connect (){
   await client.connect();
+  users = client.db('Messenger').collection('Users');
   console.log('Debug>messengerdb.js: connected to MongoDB server!');
 }
 
-let users = client.db('Messenger').collection('Users');
 //UCse-Case-03: Join Chat
 const find = async (username, password)=> {
   let user = null;
-  console.log(`Debug>messengerdb.js: find user '${username}'`)
+  console.log(`Debug>messengerdb.js: find user '${username}'`);
   if (typeof username !== 'string' || typeof password !== 'string') return null;
   //AC-03.3 
   user = await users.findOne({username:username});
@@ -52,6 +54,41 @@ const register = async (username, password) => {
   return { success: true, message: 'User registered successfully' }; //Ac-05.7
 };
 
+// UC-Profile Update: In-place update logic
+const updateProfile = async (oldUsername, newUsername, newPassword) => {
+  const oldU = String(oldUsername || "").trim();
+  const newU = String(newUsername || "").trim();
+
+  console.log(`Debug>messengerdb.js: updating profile for '${oldU}' to '${newU}'`);
+
+  const usernamePattern = /^\w{3,20}$/;
+  const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
+
+  if (!usernamePattern.test(newU) || !passwordPattern.test(newPassword)) {
+    return { success: false, message: 'Invalid username or password format' };
+  }
+
+  // Check if new username is taken by someone else
+  if (newU !== oldU) {
+    const existing = await users.findOne({ username: newU });
+    if (existing) return { success: false, message: 'Username already exists' };
+  }
+
+  // Hash new password
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  // Perform the update in-place
+  const result = await users.updateOne(
+    { username: oldU },
+    { $set: { username: newU, password: hashedPassword } }
+  );
+
+  if (result.matchedCount === 0) {
+    return { success: false, message: 'Original user not found in database' };
+  }
+
+  return { success: true, message: 'Profile updated successfully' };
+};
 
 
-module.exports = { connect, find, register };
+module.exports = { connect, find, register, updateProfile };
