@@ -1,7 +1,11 @@
 /* =============================================================================
  * EECE/CS 3093C Software Engineering — Team 20 Messenger
- * server.js — Authentication + Team 20 Messenger Merge
+ * server.js
  * =============================================================================
+ * AI helped clean up spacing and variable names so they were consistent 
+across the project. Individual parts were given to ChatGPT/Codex. Most 
+of the code was accepted, some instances needed more instruction like 
+which case to use to get the result that fit with our project
  */
 
 "use strict";
